@@ -2,6 +2,8 @@
 
 A production-quality React Native Expo application for interacting with the Stellar Testnet. This mobile wallet allows users to securely generate and store keypairs, view XLM balances, send and receive Testnet XLM, view transaction history, manage contacts, and includes a placeholder for a Soroban Savings Vault.
 
+> ⚠️ **This app runs on the Stellar Testnet only.** Testnet XLM has no real monetary value. Read the [Security Guide](docs/security.md) before storing or sharing any keys.
+
 ## Features
 
 *   **Wallet Management**: Create a new Stellar Testnet wallet or import an existing one using a secret key. Keys are securely stored on the device using `expo-secure-store`.
@@ -68,6 +70,10 @@ When you create a new wallet, it will have a balance of 0 XLM and won't exist on
 1. Copy your new Public Key from the app.
 2. Go to the [Stellar Laboratory Friendbot](https://laboratory.stellar.org/#create-account).
 3. Paste your Public Key and click "Get test network XLM".
+
+## Security
+
+See the full [Security Guide](docs/security.md) for details on secret key handling, device storage, backups, and safe development practices.
 
 ## License
 
