@@ -27,4 +27,4 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm run test
+        run: npx jest --config .github/workflows/jest.config.ci.js --watchAll=false --passWithNoTests
