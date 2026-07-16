@@ -5,6 +5,7 @@ React Native Expo wallet for Stellar Testnet.
 ## Documentation
 
 - [Storage Guide](./docs/storage.md) - SecureStore vs AsyncStorage
+- [Polyfills Guide](./docs/polyfills.md) - React Native polyfills and import order for Stellar SDK
 
 > ⚠️ **This app runs on the Stellar Testnet only.** Testnet XLM has no real monetary value. Read the [Security Guide](docs/security.md) before storing or sharing any keys.
 

@@ -1,3 +1,4 @@
+// Polyfills for Stellar SDK in React Native. See docs/polyfills.md for details.
 import 'react-native-get-random-values';
 import 'text-encoding';
 import { Buffer } from 'buffer';
