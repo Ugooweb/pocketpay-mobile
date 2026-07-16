@@ -6,6 +6,8 @@ React Native Expo wallet for Stellar Testnet.
 
 - [Storage Guide](./docs/storage.md) - SecureStore vs AsyncStorage
 
+> ⚠️ **This app runs on the Stellar Testnet only.** Testnet XLM has no real monetary value. Read the [Security Guide](docs/security.md) before storing or sharing any keys.
+
 ## Features
 
 - Wallet creation and import
@@ -37,6 +39,10 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) and review our [Acces
 ## Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md) for a full list of notable changes across releases.
+
+## Security
+
+See the full [Security Guide](docs/security.md) for details on secret key handling, device storage, backups, and safe development practices.
 
 ## License
 
