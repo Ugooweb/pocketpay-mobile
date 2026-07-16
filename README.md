@@ -11,6 +11,8 @@ A production-quality React Native Expo application for interacting with the Stel
 *   **Soroban Vault (Mock)**: A UI placeholder demonstrating where future Soroban smart contract integrations (like a savings vault) would live.
 *   **Premium UI**: Clean, modern fintech aesthetic with dark mode support.
 
+For the expected screen sequence, validation, and UI states behind these features, see [Main wallet user flows](docs/user-flows.md).
+
 ## Tech Stack
 
 *   **Framework**: React Native with Expo (Managed Workflow)
