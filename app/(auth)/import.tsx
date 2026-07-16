@@ -26,10 +26,14 @@ export default function ImportWalletScreen() {
       const keypair = StellarSdk.Keypair.fromSecret(secretKey.trim());
       const publicKey = keypair.publicKey();
       
-      await setWallet(publicKey, secretKey.trim());
+      const saved = await setWallet(publicKey, secretKey.trim());
+      if (!saved) {
+        setError('Failed to persist wallet securely. Please try again.');
+      }
       // Router will automatically redirect to (main)
-    } catch (err) {
+    } catch {
       setError('Invalid secret key. Please check and try again.');
+    } finally {
       setIsLoading(false);
     }
   };

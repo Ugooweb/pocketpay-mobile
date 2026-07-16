@@ -24,6 +24,7 @@ export default function SettingsScreen() {
       }
     } else {
       setShowSecret(false);
+      setSecretKey(null);
     }
   };
 
@@ -37,7 +38,10 @@ export default function SettingsScreen() {
           text: 'Sign Out & Clear', 
           style: 'destructive',
           onPress: async () => {
-            await clearWallet();
+            const cleared = await clearWallet();
+            if (!cleared) {
+              Alert.alert('Wallet Not Cleared', 'Failed to clear wallet securely. Please try again.');
+            }
             // Router will handle redirect to auth due to _layout logic
           }
         }
