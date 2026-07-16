@@ -1,0 +1,32 @@
+export const transactionFixtures = [
+  {
+    id: 'tx1',
+    type: 'payment',
+    from: 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H',
+    to: 'GDNOEY2L6EGCMAYNZWJN6K3K6TJJKAKNQJQJWY5HXLFY3LJQY7JJ6NVD',
+    amount: '50.0000000',
+    asset: 'XLM',
+    timestamp: '2024-01-15T10:30:00Z',
+    hash: 'abc123def456abc123def456abc123def456abc123def456abc123def456',
+  },
+  {
+    id: 'tx2',
+    type: 'payment',
+    from: 'GDNOEY2L6EGCMAYNZWJN6K3K6TJJKAKNQJQJWY5HXLFY3LJQY7JJ6NVD',
+    to: 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H',
+    amount: '25.0000000',
+    asset: 'USDC',
+    timestamp: '2024-01-15T11:00:00Z',
+    hash: 'def789ghi012def789ghi012def789ghi012def789ghi012def789ghi012',
+  },
+  {
+    id: 'tx3',
+    type: 'create_account',
+    from: 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H',
+    to: 'GAYOLLL2B3K3T4K8T4OQYMFJI2FNFO7MEJNYLWUHWQJJH7K5KJHZQH5T',
+    amount: '1.0000000',
+    asset: 'XLM',
+    timestamp: '2024-01-14T09:00:00Z',
+    hash: 'ghi345jkl678ghi345jkl678ghi345jkl678ghi345jkl678ghi345jkl678',
+  },
+];
