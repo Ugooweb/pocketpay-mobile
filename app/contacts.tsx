@@ -4,22 +4,34 @@ import { Button } from '../src/components/Button';
 import { Input } from '../src/components/Input';
 import { COLORS, SIZES, RADIUS } from '../src/constants/theme';
 import { useAppStore, Contact } from '../src/store/appStore';
+import { validateAddress } from '../src/utils/validation';
 import { Trash2, User } from 'lucide-react-native';
 
 export default function ContactsScreen() {
   const { contacts, addContact, removeContact } = useAppStore();
   const [name, setName] = useState('');
   const [publicKey, setPublicKey] = useState('');
+  const [nameError, setNameError] = useState<string | undefined>();
+  const [keyError, setKeyError] = useState<string | undefined>();
   const [isAdding, setIsAdding] = useState(false);
 
-  const handleAdd = async () => {
-    if (!name.trim() || !publicKey.trim()) {
-      Alert.alert('Error', 'Name and Public Key are required.');
-      return;
-    }
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (nameError && value.trim()) setNameError(undefined);
+  };
 
-    if (!publicKey.startsWith('G') || publicKey.length !== 56) {
-      Alert.alert('Error', 'Invalid Stellar Public Key format.');
+  const handleKeyChange = (value: string) => {
+    setPublicKey(value);
+    setKeyError(value.trim() ? validateAddress(value) ?? undefined : undefined);
+  };
+
+  const handleAdd = async () => {
+    const currentNameError = name.trim() ? undefined : 'Please enter a name.';
+    const currentKeyError = validateAddress(publicKey) ?? undefined;
+    setNameError(currentNameError);
+    setKeyError(currentKeyError);
+
+    if (currentNameError || currentKeyError) {
       return;
     }
 
@@ -32,6 +44,8 @@ export default function ContactsScreen() {
     await addContact(newContact);
     setName('');
     setPublicKey('');
+    setNameError(undefined);
+    setKeyError(undefined);
     setIsAdding(false);
   };
 
@@ -47,12 +61,13 @@ export default function ContactsScreen() {
       {isAdding ? (
         <View style={styles.addForm}>
           <Text style={styles.title}>Add New Contact</Text>
-          <Input label="Name" placeholder="Alice" value={name} onChangeText={setName} />
-          <Input 
-            label="Public Key" 
-            placeholder="G..." 
-            value={publicKey} 
-            onChangeText={setPublicKey} 
+          <Input label="Name" placeholder="Alice" value={name} onChangeText={handleNameChange} error={nameError} />
+          <Input
+            label="Public Key"
+            placeholder="G..."
+            value={publicKey}
+            onChangeText={handleKeyChange}
+            error={keyError}
             autoCapitalize="none"
           />
           <View style={styles.actions}>

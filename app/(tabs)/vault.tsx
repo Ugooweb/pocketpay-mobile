@@ -5,12 +5,14 @@ import { Input } from '../../src/components/Input';
 import { COLORS, SIZES, RADIUS } from '../../src/constants/theme';
 import { useWalletStore } from '../../src/store/walletStore';
 import { mockFetchVaultBalance, mockDepositToVault, mockWithdrawFromVault } from '../../src/services/stellar';
+import { validateAmount } from '../../src/utils/validation';
 import { PiggyBank, ShieldCheck } from 'lucide-react-native';
 
 export default function VaultScreen() {
-  const { publicKey, getSecretKey } = useWalletStore();
+  const { publicKey, getSecretKey, balance } = useWalletStore();
   const [vaultBalance, setVaultBalance] = useState('0.0000000');
   const [amount, setAmount] = useState('');
+  const [amountError, setAmountError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -29,8 +31,15 @@ export default function VaultScreen() {
     }
   };
 
+  const handleAmountChange = (value: string) => {
+    setAmount(value);
+    setAmountError(value.trim() ? validateAmount(value, balance) ?? undefined : undefined);
+  };
+
   const handleDeposit = async () => {
-    if (!amount) return;
+    const error = validateAmount(amount, balance) ?? undefined;
+    setAmountError(error);
+    if (error) return;
     try {
       setIsLoading(true);
       const secret = await getSecretKey();
@@ -41,6 +50,7 @@ export default function VaultScreen() {
       
       Alert.alert('Success', 'Funds deposited into Soroban Vault (Mock)');
       setAmount('');
+      setAmountError(undefined);
       loadVaultBalance();
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -72,7 +82,8 @@ export default function VaultScreen() {
           label="Amount to Deposit/Withdraw (XLM)"
           placeholder="0.00"
           value={amount}
-          onChangeText={setAmount}
+          onChangeText={handleAmountChange}
+          error={amountError}
           keyboardType="decimal-pad"
         />
         <View style={styles.actions}>
