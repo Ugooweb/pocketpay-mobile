@@ -1,4 +1,4 @@
-import '../shim'; // MUST BE FIRST
+import '../shim'; // MUST BE FIRST (See docs/polyfills.md for details)
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
