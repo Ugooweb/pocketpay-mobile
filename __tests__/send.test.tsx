@@ -17,6 +17,7 @@ import { Alert } from 'react-native';
 
 jest.mock('../src/services/stellar');
 jest.mock('../src/store/walletStore');
+jest.mock('pocketpay-sdk', () => ({ validatePublicKey: jest.fn(() => true) }));
 jest.mock('expo-router');
 jest.mock('lucide-react-native', () => ({ Send: () => null }));
 
@@ -82,9 +83,7 @@ describe('AC1 – invalid address error', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Destination and amount are required.');
-    });
+    expect(getByText('Please enter a destination address.')).toBeTruthy();
   });
 });
 
@@ -100,9 +99,7 @@ describe('AC2 – invalid amount error', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), '0');
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Amount must be greater than 0.');
-    });
+    expect(getByText('Amount must be more than 0.')).toBeTruthy();
   });
 
   it('shows an error alert when the amount is negative', async () => {
@@ -112,9 +109,7 @@ describe('AC2 – invalid amount error', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), '-5');
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Amount must be greater than 0.');
-    });
+    expect(getByText('Please enter a valid number.')).toBeTruthy();
   });
 
   it('shows an error alert when the amount exceeds the balance', async () => {
@@ -125,9 +120,7 @@ describe('AC2 – invalid amount error', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), '50');
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Insufficient balance.');
-    });
+    expect(getByText("You don't have enough XLM for this payment.")).toBeTruthy();
   });
 });
 
@@ -142,7 +135,7 @@ describe('AC3 – submit is blocked when the form is invalid', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(getByText('Please enter a destination address.')).toBeTruthy();
     expect(mockSendXlmTransaction).not.toHaveBeenCalled();
   });
 
@@ -153,7 +146,7 @@ describe('AC3 – submit is blocked when the form is invalid', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), '0');
     fireEvent.press(getByText('Send Payment'));
 
-    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(getByText('Amount must be more than 0.')).toBeTruthy();
     expect(mockSendXlmTransaction).not.toHaveBeenCalled();
   });
 });

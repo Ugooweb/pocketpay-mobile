@@ -8,16 +8,7 @@ const PERSIST_WALLET_ERROR = 'Failed to persist wallet securely';
 const RESTORE_WALLET_ERROR = 'Failed to restore wallet securely';
 const CLEAR_WALLET_ERROR = 'Failed to clear wallet securely';
 
-export interface TransactionRecord {
-  id: string;
-  type: string;
-  created_at: string;
-  source_account?: string;
-  to?: string;
-  from?: string;
-  amount?: string;
-  asset_type?: string;
-}
+export type TransactionRecord = PaymentRecord;
 
 interface WalletState {
   publicKey: string | null;
@@ -133,7 +124,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         fetchXlmBalance(publicKey),
         fetchRecentTransactions(publicKey),
       ]);
-      set({ balance, transactions: txs as any, isLoading: false });
+      set({ balance, transactions: txs, isLoading: false });
     } catch (err: any) {
       console.error('Failed to refresh wallet data');
       set({ isLoading: false, error: err.message || 'Failed to sync data' });

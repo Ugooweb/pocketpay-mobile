@@ -25,13 +25,18 @@ For the expected screen sequence, validation, and UI states behind these feature
 
 ## Tech Stack
 
-React Native, Expo Router, Zustand, Stellar SDK, SecureStore, AsyncStorage
+React Native, Expo Router, Zustand, PocketPay SDK, SecureStore, AsyncStorage
 
 ## Quick Start
 
+```bash
 npm install --legacy-peer-deps
 cp .env.example .env
 npm start
+```
+
+The PocketPay SDK is pinned to an official source commit and built by the
+app's `postinstall` script because the SDK is not currently published to npm.
 
 ## Contributing
 

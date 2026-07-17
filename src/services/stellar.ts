@@ -48,10 +48,9 @@ export const fetchAccountDetails = async (publicKey: string) => {
  */
 export const fetchXlmBalance = async (publicKey: string): Promise<string> => {
   try {
-    const account = await fetchAccountDetails(publicKey);
-    const nativeBalance = account.balances.find((b) => b.asset_type === 'native');
-    return nativeBalance ? nativeBalance.balance : '0.0000000';
-  } catch (error: any) {
+    const accountBalance = await getBalance(publicKey, sdkConfig);
+    return accountBalance.nativeBalance;
+  } catch (error: unknown) {
     // If account is not found (unfunded), balance is 0
     if (isNotFoundError(error)) {
       return '0.0000000';
@@ -63,7 +62,10 @@ export const fetchXlmBalance = async (publicKey: string): Promise<string> => {
 /**
  * Fetch recent transactions for a given public key.
  */
-export const fetchRecentTransactions = async (publicKey: string, limit: number = 20) => {
+export const fetchRecentTransactions = async (
+  publicKey: string,
+  limit: number = 20
+): Promise<PaymentRecord[]> => {
   try {
     const response = await server
       .operations()
@@ -126,6 +128,12 @@ export const sendXlmTransaction = async (
     throw new Error(error?.response?.data?.extras?.result_codes?.transaction || 'Transaction failed');
   }
 };
+
+const isAccountNotFoundError = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'code' in error &&
+  error.code === 'ACCOUNT_NOT_FOUND';
 
 /**
  * MOCK SERVICE WRAPPERS FOR SOROBAN SAVINGS VAULT

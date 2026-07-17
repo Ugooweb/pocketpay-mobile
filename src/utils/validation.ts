@@ -1,4 +1,4 @@
-import { StrKey } from '@stellar/stellar-sdk';
+import { validatePublicKey } from 'pocketpay-sdk';
 import { Buffer } from 'buffer';
 
 // Stellar text memos are limited to 28 bytes.
@@ -21,7 +21,9 @@ export const validateAddress = (
     return 'Please enter a destination address.';
   }
 
-  if (!StrKey.isValidEd25519PublicKey(trimmed)) {
+  try {
+    validatePublicKey(trimmed);
+  } catch {
     return "This doesn't look like a valid Stellar address. It should start with G and be 56 characters long.";
   }
 

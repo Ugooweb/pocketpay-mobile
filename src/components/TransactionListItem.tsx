@@ -34,10 +34,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = ({
   style,
   ...props
 }) => {
-  const isSent =
-    !!currentPublicKey &&
-    (transaction.source_account === currentPublicKey ||
-      transaction.from === currentPublicKey);
+  const isSent = !!currentPublicKey && transaction.from === currentPublicKey;
 
   const direction = isSent ? 'sent' : 'received';
 
@@ -47,14 +44,14 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = ({
     ? `${isSent ? '-' : '+'}${transaction.amount}`
     : null;
 
-  const formattedDate = transaction.created_at
-    ? new Date(transaction.created_at).toLocaleString()
+  const formattedDate = transaction.createdAt
+    ? new Date(transaction.createdAt).toLocaleString()
     : null;
 
   // Counterparty: for sent txs show the recipient, for received show the sender
   const counterparty = isSent
-    ? transaction.to ?? transaction.source_account ?? null
-    : transaction.from ?? transaction.source_account ?? null;
+    ? transaction.to || null
+    : transaction.from || null;
 
   const Container = onPress ? TouchableOpacity : View;
   const containerProps = onPress
@@ -116,9 +113,9 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = ({
           <Text style={styles.amountMissing}>—</Text>
         )}
 
-        {transaction.asset_type ? (
+        {transaction.asset ? (
           <Text style={styles.assetType}>
-            {transaction.asset_type === 'native' ? 'XLM' : transaction.asset_type}
+            {transaction.asset}
           </Text>
         ) : null}
       </View>

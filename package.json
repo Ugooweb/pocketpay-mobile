@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "tsc --project node_modules/pocketpay-sdk/tsconfig.json --ignoreDeprecations 5.0",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll=false",
-    "test:watch": "jest"
+    "test:watch": "jest",
+    "typecheck": "tsc --noEmit"
   },
   "jest": {
     "preset": "jest-expo",
@@ -25,7 +27,6 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@stellar/stellar-sdk": "^15.1.0",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
     "expo": "~54.0.36",
