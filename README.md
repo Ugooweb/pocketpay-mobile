@@ -23,6 +23,28 @@ For the expected screen sequence, validation, and UI states behind these feature
 
 *   [Screen Inventory](docs/screen-inventory.md) - A map of the main screens and routes in the app.
 
+## Screenshots
+
+> 📸 Screenshots below are placeholders. To update them, capture each screen from a simulator or device (use dummy/funded Testnet data only — never real keys or mainnet funds) and replace the files in `docs/screenshots/`.
+
+| Wallet | Send | Receive |
+|:---:|:---:|:---:|
+| ![Wallet screen](docs/screenshots/wallet.png) | ![Send screen](docs/screenshots/send.png) | ![Receive screen](docs/screenshots/receive.png) |
+| *Balance overview and quick actions* | *Send XLM to any Stellar address* | *QR code for your public key* |
+
+| Activity | Contacts | Vault |
+|:---:|:---:|:---:|
+| ![Activity screen](docs/screenshots/activity.png) | ![Contacts screen](docs/screenshots/contacts.png) | ![Vault screen](docs/screenshots/vault.png) |
+| *Transaction history with sent/received indicators* | *Saved addresses for quick access* | *Soroban Savings Vault (mock)* |
+
+### Updating screenshots
+
+1. Run the app in a simulator with a funded Testnet account.
+2. Navigate to the relevant screen.
+3. Take a screenshot and export it at roughly **390 × 844 px** (iPhone 14 logical resolution) or equivalent Android size.
+4. Save it to `docs/screenshots/<screen-name>.png` using the filenames shown above.
+5. Commit only the image files — never include screenshots that reveal a real secret key or personal data.
+
 ## Tech Stack
 
 React Native, Expo Router, Zustand, PocketPay SDK, SecureStore, AsyncStorage
