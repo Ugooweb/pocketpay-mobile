@@ -31,6 +31,8 @@ jest.mock('lucide-react-native', () => ({
   CheckCircle: () => null,
   ArrowUpRight: () => null,
   ArrowDownLeft: () => null,
+  WifiOff: () => null,
+  RefreshCw: () => null,
 }));
 
 import { useWalletStore } from '../src/store/walletStore';
