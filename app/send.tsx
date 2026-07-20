@@ -1,10 +1,11 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '../src/components/Button';
 import { FormField } from '../src/components/FormField';
 import { QrScanner } from '../src/components/QrScanner';
-import { COLORS, SIZES, RADIUS } from '../src/constants/theme';
+import { SIZES, RADIUS, ThemeColors } from '../src/constants/theme';
+import { useTheme } from '../src/hooks/useTheme';
 import { sendXlmTransaction } from '../src/services/stellar';
 import { useWalletStore } from '../src/store/walletStore';
 import { validateAddress, validateAmount, validateMemo } from '../src/utils/validation';
@@ -131,7 +132,7 @@ export default function SendScreen() {
                 accessibilityRole="button"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <ScanLine size={20} color={COLORS.textSecondary} />
+                <ScanLine size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             }
           />
