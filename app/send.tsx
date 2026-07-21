@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '../src/components/Button';
@@ -8,7 +8,9 @@ import { SIZES, RADIUS, ThemeColors } from '../src/constants/theme';
 import { useTheme } from '../src/hooks/useTheme';
 import { sendXlmTransaction } from '../src/services/stellar';
 import { useWalletStore } from '../src/store/walletStore';
+import { useAppStore } from '../src/store/appStore';
 import { validateAddress, validateAmount, validateMemo } from '../src/utils/validation';
+import { resolveAddressLabel } from '../src/utils/contacts';
 import { Send as SendIcon, ScanLine } from 'lucide-react-native';
 
 interface FieldErrors {
@@ -22,6 +24,7 @@ export default function SendScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { publicKey, getSecretKey, refreshWalletData, balance } = useWalletStore();
+  const contacts = useAppStore((state) => state.contacts);
 
   const [destination, setDestination] = useState('');
   const [amount, setAmount] = useState('');
@@ -29,6 +32,10 @@ export default function SendScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+
+  const destinationContact = destination.trim() && !errors.destination
+    ? resolveAddressLabel(destination.trim(), contacts)
+    : null;
 
   const handleDestinationChange = (value: string) => {
     setDestination(value);
@@ -136,6 +143,14 @@ export default function SendScreen() {
               </TouchableOpacity>
             }
           />
+
+          {destinationContact?.isContact ? (
+            <View style={styles.contactMatch}>
+              <Text style={styles.contactMatchText}>
+                Sending to saved contact: {destinationContact.label}
+              </Text>
+            </View>
+          ) : null}
           
           <FormField
             label="Amount (XLM)"
@@ -202,6 +217,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   form: {
     flex: 1,
+  },
+  contactMatch: {
+    marginTop: -SIZES.sm,
+    marginBottom: SIZES.md,
+  },
+  contactMatchText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   sendButton: {
     marginBottom: SIZES.xxl,

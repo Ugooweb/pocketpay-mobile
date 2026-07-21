@@ -6,6 +6,8 @@ import { CheckCircle, Copy, Check, ExternalLink } from 'lucide-react-native';
 import { Button } from '../src/components/Button';
 import { COLORS, SIZES, RADIUS } from '../src/constants/theme';
 import { getExplorerTxUrl } from '../src/services/stellar';
+import { useAppStore } from '../src/store/appStore';
+import { resolveAddressLabel } from '../src/utils/contacts';
 
 /**
  * Payment receipt shown after a successful send. Never render the wallet's
@@ -18,6 +20,7 @@ export default function PaymentSuccessScreen() {
     amount?: string;
     destination?: string;
   }>();
+  const contacts = useAppStore((state) => state.contacts);
   const [hashCopied, setHashCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,6 +31,7 @@ export default function PaymentSuccessScreen() {
   }, []);
 
   const explorerUrl = getExplorerTxUrl(hash);
+  const destinationLabel = destination ? resolveAddressLabel(destination, contacts) : null;
 
   const handleCopyHash = async () => {
     if (!hash) return;
@@ -58,7 +62,9 @@ export default function PaymentSuccessScreen() {
         <View style={styles.divider} />
 
         <View style={styles.row}>
-          <Text style={styles.rowLabel}>To</Text>
+          <Text style={styles.rowLabel}>
+            To{destinationLabel?.isContact ? ` · ${destinationLabel.label}` : ''}
+          </Text>
         </View>
         <Text style={styles.addressValue} selectable numberOfLines={1} ellipsizeMode="middle">
           {destination ?? '—'}

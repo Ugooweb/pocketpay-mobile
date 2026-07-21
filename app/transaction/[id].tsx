@@ -4,13 +4,16 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Copy, Check, ArrowLeft, ArrowUpRight, ArrowDownLeft } from 'lucide-react-native';
 import { useWalletStore } from '../../src/store/walletStore';
+import { useAppStore } from '../../src/store/appStore';
 import { COLORS, SIZES, RADIUS } from '../../src/constants/theme';
 import { Button } from '../../src/components/Button';
+import { resolveAddressLabel } from '../../src/utils/contacts';
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, publicKey } = useWalletStore();
+  const contacts = useAppStore((state) => state.contacts);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   interface TransactionDetail {
@@ -51,6 +54,9 @@ export default function TransactionDetailScreen() {
   const txHash = tx.hash || tx.transaction_hash || '';
   const senderAddress = tx.from || '';
   const recipientAddress = tx.to || '';
+
+  const senderLabel = resolveAddressLabel(senderAddress, contacts);
+  const recipientLabel = resolveAddressLabel(recipientAddress, contacts);
 
   const handleCopy = async (text: string, fieldName: string) => {
     if (!text) return;
@@ -138,7 +144,9 @@ export default function TransactionDetailScreen() {
         {senderAddress ? (
           <View style={styles.detailRow}>
             <View style={styles.labelWithAction}>
-              <Text style={styles.rowLabel}>Sender (From)</Text>
+              <Text style={styles.rowLabel}>
+                Sender (From){senderLabel.isContact ? ` · ${senderLabel.label}` : ''}
+              </Text>
               <TouchableOpacity 
                 onPress={() => handleCopy(senderAddress, 'sender')} 
                 style={styles.copyBtn}
@@ -164,7 +172,9 @@ export default function TransactionDetailScreen() {
         {recipientAddress ? (
           <View style={styles.detailRow}>
             <View style={styles.labelWithAction}>
-              <Text style={styles.rowLabel}>Recipient (To)</Text>
+              <Text style={styles.rowLabel}>
+                Recipient (To){recipientLabel.isContact ? ` · ${recipientLabel.label}` : ''}
+              </Text>
               <TouchableOpacity 
                 onPress={() => handleCopy(recipientAddress, 'recipient')} 
                 style={styles.copyBtn}
