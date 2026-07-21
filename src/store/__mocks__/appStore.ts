@@ -8,9 +8,19 @@ const defaultState = {
   isInitialized: true,
   initializeApp: jest.fn(async () => {}),
   addContact: jest.fn(async () => {}),
+  addContactIfUnique: jest.fn(async (contact) => ({
+    isDuplicate: false,
+    type: "none" as const,
+    message: "",
+  })),
   removeContact: jest.fn(async () => {}),
   findContactByPublicKey: jest.fn(() => undefined),
   findContactByName: jest.fn(() => undefined),
+  findDuplicateContact: jest.fn(() => ({
+    isDuplicate: false,
+    type: "none" as const,
+    message: "",
+  })),
   setThemeMode: jest.fn(async () => {}),
 };
 
