@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Button } from "../src/components/Button";
+import { AsyncActionButton } from "../src/components/AsyncActionButton";
 import { FormField } from "../src/components/FormField";
 import { QrScanner } from "../src/components/QrScanner";
 import { SIZES, RADIUS, ThemeColors } from "../src/constants/theme";
@@ -254,10 +254,11 @@ export default function SendScreen() {
           />
         </View>
 
-        <Button
+        <AsyncActionButton
           title="Send Payment"
           onPress={handleSend}
           isLoading={isLoading}
+          loadingText="Sending…"
           style={styles.sendButton}
         />
       </KeyboardAvoidingView>

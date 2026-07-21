@@ -17,7 +17,7 @@ export const getDiagnostics = () => {
     },
     appState: {
       isInitialized: appState.isInitialized,
-      isDarkMode: appState.isDarkMode,
+      themeMode: appState.themeMode,
       contactsCount: appState.contacts.length,
     },
     walletState: {

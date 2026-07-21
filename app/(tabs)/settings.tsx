@@ -90,7 +90,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Shield color={COLORS.primary} size={24} />
+              <Shield color={colors.primary} size={24} />
               <View style={styles.rowTextGroup}>
                 <Text style={styles.rowText}>App Lock</Text>
                 <Text style={styles.rowHelper}>
@@ -125,6 +125,7 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
+      </View>
 
         {/* Wallet */}
         <View style={styles.section}>
@@ -154,48 +155,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-      {__DEV__ && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Development</Text>
-          <View style={styles.card}>
-            <Button 
-              title="Export Diagnostics" 
-              variant="outline" 
-              onPress={handleExportDiagnostics}
-              style={[styles.menuButton, { borderBottomWidth: 0 }]}
-            />
-          </View>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.card}>
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>App Name</Text>
-              <Text style={styles.aboutValue}>{appName}</Text>
-            </View>
-          </View>
-          <View style={styles.aboutDivider} />
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>Version</Text>
-              <Text style={styles.aboutValue}>{appVersion}</Text>
-            </View>
-          </View>
-          <View style={styles.aboutDivider} />
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>Network</Text>
-              <Text style={styles.aboutValue}>Testnet</Text>
-            </View>
-          </View>
-        </View>
-      </View>
 
       <View style={[styles.section, { marginTop: SIZES.xl }]}>
         <Button

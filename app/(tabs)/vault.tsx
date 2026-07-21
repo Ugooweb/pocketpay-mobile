@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Button } from '../../src/components/Button';
+import { AsyncActionButton } from '../../src/components/AsyncActionButton';
 import { Input } from '../../src/components/Input';
 import { VaultConfirmModal, VaultAction } from '../../src/components/VaultConfirmModal';
 import { VaultIntroModal } from '../../src/components/VaultIntroModal';
@@ -254,7 +254,7 @@ export default function VaultScreen() {
             editable={!(isSubmitting || depositForm.isSubmitting)}
           />
           <View style={styles.actions}>
-            <Button
+            <AsyncActionButton
               title="Deposit"
               onPress={() => handleAction('deposit')}
               isLoading={depositForm.isSubmitting || (isSubmitting && pendingAction === 'deposit')}
@@ -262,7 +262,7 @@ export default function VaultScreen() {
               disabled={isLoadingBalance}
               style={styles.actionButton}
             />
-            <Button
+            <AsyncActionButton
               title="Withdraw"
               variant="secondary"
               onPress={() => handleAction('withdraw')}
@@ -272,7 +272,7 @@ export default function VaultScreen() {
               style={styles.actionButton}
             />
           </View>
-          <Button
+          <AsyncActionButton
             title="Lock Funds (30 days)"
             variant="outline"
             onPress={() => handleAction('lock')}

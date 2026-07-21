@@ -77,6 +77,7 @@ export const WalletResetConfirmModal: React.FC<WalletResetConfirmModalProps> = (
             <Text style={styles.dataLabel}>{label}</Text>
             <Text style={styles.dataDetail}>{detail}</Text>
           </View>
+        </View>
       ))}
 
       {/* Typed confirmation */}

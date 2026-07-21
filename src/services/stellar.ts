@@ -264,16 +264,5 @@ export const getExplorerTxUrl = (hash: string | null | undefined): string | null
   return `https://stellar.expert/explorer/${explorerNetwork}/tx/${hash}`;
 };
 
-export const fundWithFriendbot = async (publicKey: string): Promise<void> => {
-  try {
-    const url = `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Friendbot error: ${response.statusText}`);
-    }
-  } catch (error: any) {
-    console.error('Friendbot funding failed:', error);
-    throw new Error(error.message || 'Friendbot funding failed');
-  }
-};
+
 
