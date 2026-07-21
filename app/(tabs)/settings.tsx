@@ -141,6 +141,20 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {__DEV__ && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Development</Text>
+          <View style={styles.card}>
+            <Button 
+              title="Export Diagnostics" 
+              variant="outline" 
+              onPress={handleExportDiagnostics}
+              style={[styles.menuButton, { borderBottomWidth: 0 }]}
+            />
+          </View>
+        </View>
+      )}
+
       <View style={[styles.section, { marginTop: SIZES.xl }]}>
         <Button
           title="Sign Out & Clear Wallet"
