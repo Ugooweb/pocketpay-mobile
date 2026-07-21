@@ -76,7 +76,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <><ScrollView style={styles.container}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferences</Text>
         <View style={styles.card}>
@@ -154,13 +154,13 @@ export default function SettingsScreen() {
         <Text style={styles.footerText}>Network: Testnet</Text>
       </View>
     </ScrollView>
-    <WalletResetConfirmModal
-      visible={showResetModal}
-      isLoading={isResetting}
-      onConfirm={handleResetConfirm}
-      onCancel={() => setShowResetModal(false)}
-    />
-  );
+      <WalletResetConfirmModal
+        visible={showResetModal}
+        isLoading={isResetting}
+        onConfirm={handleResetConfirm}
+        onCancel={() => setShowResetModal(false)}
+      />
+    </>);
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({

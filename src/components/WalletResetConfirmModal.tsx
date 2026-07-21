@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import {
   View,
   Text,
@@ -7,8 +8,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { COLORS, SIZES, RADIUS } from '../constants/theme';
-import { X, ShieldAlert, Trash2 } from 'lucide-react-native';
+import { ShieldAlert } from 'lucide-react-native';
 import { Input } from './Input';
+import { ConfirmModal } from './ConfirmModal';
 import { Button } from './Button';
 
 interface WalletResetConfirmModalProps {
@@ -31,13 +33,33 @@ export const WalletResetConfirmModal: React.FC<WalletResetConfirmModalProps> = (
   const isConfirmed = typedText === CONFIRMATION_TEXT;
 
   return (
-    <Modal
+    <ConfirmModal
       visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onCancel}
+      title="Reset Wallet"
+      message="This will remove your wallet data from this device. Make sure you have backed up your secret key, otherwise your funds cannot be recovered."
+      confirmLabel="Reset Wallet"
+      cancelLabel="Cancel"
+      destructive
+      isLoading={isLoading}
+      confirmDisabled={!isConfirmed}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
     >
+      <Input
+        label={`Type "${CONFIRMATION_TEXT}" to confirm`}
+        value={typedText}
+        onChangeText={setTypedText}
+        placeholder={CONFIRMATION_TEXT}
+        autoCapitalize="characters"
+        autoComplete="off"
+        autoCorrect={false}
+        editable={!isLoading}
+      />
+      <View style={styles.disclaimer}>
+        <ShieldAlert color={COLORS.textMuted} size={14} style={{ marginRight: 6 }} />
+        <Text style={styles.disclaimerText}>
+          This action is irreversible. Ensure you have your secret key saved.
+        </Text>
       <View style={styles.overlay}>
         <View style={styles.card}>
           {/* Header */}
@@ -102,74 +124,17 @@ export const WalletResetConfirmModal: React.FC<WalletResetConfirmModalProps> = (
           </View>
         </View>
       </View>
-    </Modal>
+    </ConfirmModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SIZES.lg,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: SIZES.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SIZES.md,
-    position: 'relative',
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(244, 67, 54, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.surfaceLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    color: COLORS.textPrimary,
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: SIZES.sm,
-  },
-  description: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: SIZES.lg,
-  },
   disclaimer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: 'rgba(160, 170, 191, 0.08)',
     borderRadius: RADIUS.sm,
     padding: SIZES.sm,
-    marginBottom: SIZES.lg,
   },
   disclaimerText: {
     color: COLORS.textMuted,
