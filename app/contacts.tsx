@@ -28,6 +28,7 @@ import { useTheme } from '../src/hooks/useTheme';
 import { useAppStore, Contact } from '../src/store/appStore';
 import { validateAddress } from '../src/utils/validation';
 import { Trash2, User } from 'lucide-react-native';
+import { EmptyState } from '../src/components/EmptyState';
 
 // ── View modes ───────────────────────────────────────────────────────────────
 type Mode =
@@ -303,17 +304,11 @@ export default function ContactsScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
-              <View style={styles.emptyState} accessibilityLiveRegion="polite">
-                <User
-                  color={colors.textMuted}
-                  size={48}
-                  style={{ marginBottom: SIZES.md }}
-                />
-                <Text style={styles.emptyText}>No contacts yet</Text>
-                <Text style={styles.emptySubText}>
-                  Add a contact manually or scan a QR code.
-                </Text>
-              </View>
+              <EmptyState
+                icon={<User color={colors.textMuted} size={48} />}
+                title="No contacts yet"
+                message="Add a contact manually or scan a QR code."
+              />
             }
             renderItem={({ item }) => (
               <View style={styles.contactItem}>
@@ -414,19 +409,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
   },
-  // ── Empty state ───────────────────────────────────────────────────────────────
-  emptyState: {
-    alignItems: 'center',
-    marginTop: SIZES.xxl * 2,
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 16,
-    marginBottom: SIZES.xs,
-  },
-  emptySubText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-  },
+
 });
