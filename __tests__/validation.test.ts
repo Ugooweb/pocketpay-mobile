@@ -28,13 +28,13 @@ describe('validation utilities', () => {
     });
 
     it('returns null for valid address', () => {
-      const valid = 'GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWX';
+      const valid = 'GABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABC';
       expect(validateAddress(valid)).toBeNull();
       expect(validateAddress(`  ${valid}  `)).toBeNull(); // trimmed
     });
 
     it('returns error if sending to self', () => {
-      const ownKey = 'GOWNKEYABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQ';
+      const ownKey = 'GOWNKEYABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVW';
       expect(validateAddress(ownKey, ownKey)).toBe("You can't send a payment to your own wallet.");
     });
   });

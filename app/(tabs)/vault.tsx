@@ -10,6 +10,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useWalletStore } from '../../src/store/walletStore';
 import { useVaultStore } from '../../src/store/vaultStore';
 import { validateAmount } from '../../src/utils/validation';
+import { useVaultDepositForm } from '../../src/features/vault/useVaultDepositForm';
 import { PiggyBank, ShieldCheck, AlertTriangle, XCircle, Info } from 'lucide-react-native';
 
 const LOCK_PERIOD_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -31,8 +32,12 @@ export default function VaultScreen() {
     withdraw,
   } = useVaultStore();
 
-  const [amount, setAmount] = useState('');
-  const [amountError, setAmountError] = useState<string | undefined>();
+  const depositForm = useVaultDepositForm();
+  const amount = depositForm.amount;
+  const amountError = depositForm.amountError;
+  const setAmount = depositForm.setAmount;
+  const setAmountError = depositForm.setAmountError;
+
   const [isLoadingActivity] = useState(false);
 
   // Vault unavailable state
@@ -70,21 +75,24 @@ export default function VaultScreen() {
   };
 
   const handleAmountChange = (value: string) => {
-    setAmount(value);
-    setAmountError(value.trim() ? validateAmount(value) ?? undefined : undefined);
+    depositForm.setAmount(value);
   };
 
   const handleAction = (action: VaultAction) => {
     if (!publicKey) return;
 
-    // Deposits are limited by the wallet balance; withdrawals by the vault balance.
-    const error =
-      validateAmount(amount, action === 'deposit' ? walletBalance : undefined) ??
-      (action === 'withdraw' && Number(amount) > Number(balance)
-        ? "You don't have enough XLM in the vault for this withdrawal."
-        : undefined);
-    setAmountError(error);
-    if (error) return;
+    if (action === 'deposit') {
+      const isValid = depositForm.validate(walletBalance);
+      if (!isValid) return;
+    } else {
+      const error =
+        validateAmount(amount, undefined) ??
+        (action === 'withdraw' && Number(amount) > Number(balance)
+          ? "You don't have enough XLM in the vault for this withdrawal."
+          : undefined);
+      depositForm.setAmountError(error);
+      if (error) return;
+    }
 
     setPendingAction(action);
     if (action === 'lock') {
@@ -98,9 +106,6 @@ export default function VaultScreen() {
     if (!publicKey || !pendingAction) return;
 
     try {
-      const secret = await getSecretKey();
-      if (!secret) throw new Error('Secret key not found');
-
       if (pendingAction === 'lock') {
         setConfirmVisible(false);
         Alert.alert(
@@ -110,13 +115,17 @@ export default function VaultScreen() {
         return;
       }
 
-      const hash =
-        pendingAction === 'deposit'
-          ? await deposit(secret, publicKey, amount)
-          : await withdraw(secret, publicKey, amount);
+      let hash: string | null = null;
+      if (pendingAction === 'deposit') {
+        hash = await depositForm.submit(publicKey, getSecretKey, deposit, walletBalance);
+      } else {
+        const secret = await getSecretKey();
+        if (!secret) throw new Error('Secret key not found');
+        hash = await withdraw(secret, publicKey, amount);
+        depositForm.setAmount('');
+        depositForm.setAmountError(undefined);
+      }
 
-      setAmount('');
-      setAmountError(undefined);
       setConfirmVisible(false);
       const verb = pendingAction === 'deposit' ? 'deposited into' : 'withdrawn from';
       Alert.alert(
@@ -145,7 +154,7 @@ export default function VaultScreen() {
         visible={confirmVisible}
         actionType={pendingAction}
         amount={amount}
-        isLoading={isSubmitting}
+        isLoading={isSubmitting || depositForm.isSubmitting}
         contractId={isConfigured ? contractId : undefined}
         unlockTime={pendingAction === 'lock' ? pendingUnlockTime : undefined}
         onConfirm={handleConfirmAction}
@@ -242,13 +251,13 @@ export default function VaultScreen() {
             onChangeText={handleAmountChange}
             keyboardType="decimal-pad"
             error={amountError}
-            editable={!isSubmitting}
+            editable={!(isSubmitting || depositForm.isSubmitting)}
           />
           <View style={styles.actions}>
             <Button
               title="Deposit"
               onPress={() => handleAction('deposit')}
-              isLoading={isSubmitting && pendingAction === 'deposit'}
+              isLoading={depositForm.isSubmitting || (isSubmitting && pendingAction === 'deposit')}
               loadingText="Depositing…"
               disabled={isLoadingBalance}
               style={styles.actionButton}
@@ -259,7 +268,7 @@ export default function VaultScreen() {
               onPress={() => handleAction('withdraw')}
               isLoading={isSubmitting && pendingAction === 'withdraw'}
               loadingText="Withdrawing…"
-              disabled={isLoadingBalance}
+              disabled={isLoadingBalance || depositForm.isSubmitting}
               style={styles.actionButton}
             />
           </View>
@@ -269,7 +278,7 @@ export default function VaultScreen() {
             onPress={() => handleAction('lock')}
             isLoading={isSubmitting && pendingAction === 'lock'}
             loadingText="Locking…"
-            disabled={isSubmitting}
+            disabled={isSubmitting || depositForm.isSubmitting}
             style={styles.lockButton}
           />
         </View>
