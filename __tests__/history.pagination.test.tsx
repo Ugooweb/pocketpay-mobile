@@ -17,7 +17,18 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 
 jest.mock('../src/store/walletStore');
-jest.mock('../src/store/appStore');
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+}));
+jest.mock('../src/store/appStore', () => {
+  const actual = jest.requireActual('../src/store/appStore');
+  return {
+    ...actual,
+    useAppStore: jest.fn(),
+  };
+});
 jest.mock('../src/services/stellar');
 jest.mock('expo-router');
 jest.mock('lucide-react-native', () => ({
@@ -27,16 +38,18 @@ jest.mock('lucide-react-native', () => ({
 }));
 
 import { useWalletStore } from '../src/store/walletStore';
+import { useAppStore } from '../src/store/appStore';
 import HistoryScreen from '../app/(tabs)/history';
 
 const mockUseWalletStore = useWalletStore as jest.MockedFunction<typeof useWalletStore>;
+const mockUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const makeTx = (id: string, createdAt = '2024-01-01T00:00:00Z') => ({
+const makeTx = (id: string, createdAt: string | number = '2024-01-01T00:00:00Z'): any => ({
   id,
-  type: 'payment',
-  created_at: createdAt,
+  type: 'payment' as any, // Cast to avoid Stellar SDK type issues in tests
+  created_at: typeof createdAt === 'number' ? new Date(createdAt).toISOString() : createdAt,
   amount: '10.0000000',
   asset_type: 'native',
   source_account: 'GOTHER',
@@ -44,7 +57,7 @@ const makeTx = (id: string, createdAt = '2024-01-01T00:00:00Z') => ({
   from: 'GOTHER',
 });
 
-const baseStore = {
+const baseStore: any = {
   publicKey: 'GPUBLIC123',
   balance: '100.0000000',
   transactions: [],
@@ -61,9 +74,25 @@ const baseStore = {
   getSecretKey: jest.fn(async () => 'SSECRET123'),
 };
 
-function setup(overrides: Partial<typeof baseStore> = {}) {
+function setup(overrides: any = {}) {
   const store = { ...baseStore, ...overrides };
-  mockUseWalletStore.mockReturnValue(store as any);
+  mockUseWalletStore.mockReturnValue(store);
+
+  // Create a minimal valid AppState mock with all required properties
+  const appStateMock: any = {
+    contacts: [],
+    themeMode: 'dark',
+    isInitialized: true,
+    initializeApp: jest.fn(),
+    addContact: jest.fn(),
+    removeContact: jest.fn(),
+    findContactByPublicKey: jest.fn(),
+    setThemeMode: jest.fn(),
+  };
+  mockUseAppStore.mockImplementation((selector) =>
+    selector(appStateMock)
+  );
+
   return store;
 }
 
@@ -89,7 +118,7 @@ describe('AC-H1 – refreshWalletData on mount', () => {
 
 describe('AC-H2 – transaction rows are rendered', () => {
   it('renders one row for each transaction', () => {
-    setup({ transactions: [makeTx('tx1'), makeTx('tx2'), makeTx('tx3')] as any });
+    setup({ transactions: [makeTx('tx1'), makeTx('tx2'), makeTx('tx3')] });
     const { getAllByText } = render(<HistoryScreen />);
     // Each TransactionListItem renders "Received XLM" or "Sent XLM".
     // With our fixture data (from !== publicKey) all are "Received XLM".
@@ -106,8 +135,8 @@ describe('activity grouping', () => {
     setup({
       transactions: [
         makeTx('tx1', new Date().toISOString()),
-        makeTx('tx2', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-      ] as any,
+        makeTx('tx2', Date.now() - 24 * 60 * 60 * 1000), // Pass timestamp, makeTx converts to ISO
+      ],
     });
 
     const { getByText } = render(<HistoryScreen />);
@@ -118,7 +147,7 @@ describe('activity grouping', () => {
 
   it('uses a fallback label for transactions with invalid dates', () => {
     setup({
-      transactions: [makeTx('tx1', 'not-a-date') as any],
+      transactions: [makeTx('tx1', 'not-a-date')],
     });
 
     const { getByText } = render(<HistoryScreen />);
@@ -134,12 +163,23 @@ describe('activity grouping', () => {
 describe('AC-H3 – empty state', () => {
   it('shows the empty state when there are no transactions and not loading', () => {
     setup({ transactions: [], isLoading: false });
-    const { getByTestId } = render(<HistoryScreen />);
+    const { getByTestId, getByText } = render(<HistoryScreen />);
     expect(getByTestId('empty-state')).toBeTruthy();
+    expect(getByText('No activity yet')).toBeTruthy();
+    expect(
+      getByText('Your payments and transfers will appear here once you send or receive XLM.')
+    ).toBeTruthy();
+    expect(getByText('Receive XLM')).toBeTruthy();
   });
 
   it('does not show the empty state while loading', () => {
     setup({ transactions: [], isLoading: true });
+    const { queryByTestId } = render(<HistoryScreen />);
+    expect(queryByTestId('empty-state')).toBeNull();
+  });
+
+  it('does not show the empty state when transactions exist', () => {
+    setup({ transactions: [makeTx('tx1')], isLoading: false });
     const { queryByTestId } = render(<HistoryScreen />);
     expect(queryByTestId('empty-state')).toBeNull();
   });
@@ -152,7 +192,7 @@ describe('AC-H3 – empty state', () => {
 describe('AC-H4 – loading-more indicator', () => {
   it('shows the loading indicator when isLoadingMore is true', () => {
     setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: true,
       hasMoreTransactions: true,
     });
@@ -162,7 +202,7 @@ describe('AC-H4 – loading-more indicator', () => {
 
   it('does not show the loading indicator when isLoadingMore is false', () => {
     setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: false,
       hasMoreTransactions: true,
     });
@@ -178,7 +218,7 @@ describe('AC-H4 – loading-more indicator', () => {
 describe('AC-H5 – end-of-list indicator', () => {
   it('shows end-of-list text when hasMoreTransactions is false and list is non-empty', () => {
     setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: false,
       hasMoreTransactions: false,
     });
@@ -198,7 +238,7 @@ describe('AC-H5 – end-of-list indicator', () => {
 
   it('does not show end-of-list text while loading more', () => {
     setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: true,
       hasMoreTransactions: false,
     });
@@ -216,7 +256,7 @@ describe('AC-H5 – end-of-list indicator', () => {
 describe('AC-H6 – no footer when more pages available and not loading', () => {
   it('renders neither footer indicator when hasMoreTransactions is true and not loading', () => {
     setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: false,
       hasMoreTransactions: true,
     });
@@ -233,7 +273,7 @@ describe('AC-H6 – no footer when more pages available and not loading', () => 
 describe('AC-H7 – loadMoreTransactions called on end-reached', () => {
   it('calls loadMoreTransactions when the FlatList fires onEndReached', () => {
     const store = setup({
-      transactions: [makeTx('tx1'), makeTx('tx2')] as any,
+      transactions: [makeTx('tx1'), makeTx('tx2')],
       isLoadingMore: false,
       hasMoreTransactions: true,
     });
@@ -250,7 +290,7 @@ describe('AC-H7 – loadMoreTransactions called on end-reached', () => {
 
   it('does not call loadMoreTransactions when hasMoreTransactions is false', () => {
     const store = setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: false,
       hasMoreTransactions: false,
     });
@@ -266,7 +306,7 @@ describe('AC-H7 – loadMoreTransactions called on end-reached', () => {
 
   it('does not call loadMoreTransactions when isLoadingMore is true', () => {
     const store = setup({
-      transactions: [makeTx('tx1')] as any,
+      transactions: [makeTx('tx1')],
       isLoadingMore: true,
       hasMoreTransactions: true,
     });

@@ -14,6 +14,7 @@ import { SIZES, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
 import { TransactionListItem } from '../../src/components/TransactionListItem';
 import { NetworkStatusBanner } from '../../src/components/NetworkStatusBanner';
+import { EmptyState } from '../../src/components/EmptyState';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { groupTransactionsByDate } from '../../src/utils/transactions';
 
@@ -55,11 +56,22 @@ const ListFooter: React.FC<{
 /**
  * Shown when there are no transactions and the screen is not loading.
  */
-const EmptyState: React.FC<{ colors: ThemeColors; styles: ReturnType<typeof createStyles> }> = ({ colors, styles }) => (
+const ActivityEmptyState: React.FC<{
+  colors: ThemeColors;
+  styles: ReturnType<typeof createStyles>;
+  onReceivePress: () => void;
+}> = ({ colors, styles, onReceivePress }) => (
   <View style={styles.emptyState} testID="empty-state">
-    <Clock color={colors.textMuted} size={48} style={{ marginBottom: SIZES.md }} />
-    <Text style={styles.emptyText}>No transactions found</Text>
-    <Text style={styles.emptySubtext}>Your recent activity will appear here.</Text>
+    <EmptyState
+      icon={<Clock color={colors.textMuted} size={48} />}
+      title="No activity yet"
+      message="Your payments and transfers will appear here once you send or receive XLM."
+      action={{
+        label: 'Receive XLM',
+        onPress: onReceivePress,
+        variant: 'outline',
+      }}
+    />
   </View>
 );
 
@@ -170,7 +182,15 @@ export default function HistoryScreen() {
           />
         }
         ListFooterComponent={renderFooter}
-        ListEmptyComponent={!isLoading ? <EmptyState colors={colors} styles={styles} /> : null}
+        ListEmptyComponent={
+          !isLoading ? (
+            <ActivityEmptyState
+              colors={colors}
+              styles={styles}
+              onReceivePress={() => router.push('/receive')}
+            />
+          ) : null
+        }
         // Avoid stale closures while also keeping rendering performant.
         extraData={{ isLoadingMore, hasMoreTransactions, colors, styles }}
       />
@@ -200,16 +220,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: SIZES.xxl * 2,
-  },
-  emptyText: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: SIZES.xs,
-  },
-  emptySubtext: {
-    color: colors.textSecondary,
-    fontSize: 14,
   },
   footer: {
     flexDirection: 'row',
