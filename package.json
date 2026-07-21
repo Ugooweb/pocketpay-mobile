@@ -33,14 +33,12 @@
     "moduleNameMapper": {
       "^expo-router$": "<rootDir>/__mocks__/expo-router.ts",
       "^expo-secure-store$": "<rootDir>/__mocks__/expo-secure-store.ts",
-      "^pocketpay-sdk$": "<rootDir>/src/sdk-stub/pocketpay-sdk.js"
       "^pocketpay-sdk$": "<rootDir>/__mocks__/pocketpay-sdk.ts",
       "^@stellar/stellar-sdk$": "<rootDir>/__mocks__/@stellar/stellar-sdk.ts"
     }
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@stellar/stellar-sdk": "^16.0.1",
     "@stellar/stellar-sdk": "^12.2.0",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
