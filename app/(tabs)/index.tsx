@@ -10,6 +10,7 @@ import { TransactionListItem } from '../../src/components/TransactionListItem';
 import { NetworkStatusBanner } from '../../src/components/NetworkStatusBanner';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { Clock, RefreshCw } from 'lucide-react-native';
+import { formatAmount } from '../../src/utils/amount';
 
 function formatRelativeTime(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -67,7 +68,7 @@ export default function HomeScreen() {
 
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Total Balance (Testnet)</Text>
-        <Text style={styles.balanceValue}>{balance} XLM</Text>
+        <Text style={styles.balanceValue}>{formatAmount(balance)} XLM</Text>
         <Text style={styles.publicKey} numberOfLines={1} ellipsizeMode="middle">
           {publicKey}
         </Text>

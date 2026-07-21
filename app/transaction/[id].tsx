@@ -8,6 +8,7 @@ import { useAppStore } from '../../src/store/appStore';
 import { COLORS, SIZES, RADIUS } from '../../src/constants/theme';
 import { Button } from '../../src/components/Button';
 import { resolveAddressLabel } from '../../src/utils/contacts';
+import { formatAmount } from '../../src/utils/amount';
 
 export default function TransactionDetailScreen() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function TransactionDetailScreen() {
   const isSent = !!publicKey && tx.from === publicKey;
   const directionLabel = isSent ? 'Sent' : 'Received';
   const amountColor = isSent ? COLORS.textPrimary : COLORS.success;
-  const formattedAmount = `${isSent ? '-' : '+'}${tx.amount || 'N/A'} ${tx.asset || 'XLM'}`;
+  const formattedAmount = `${isSent ? '-' : '+'}${tx.amount ? formatAmount(tx.amount) : 'N/A'} ${tx.asset || 'XLM'}`;
   const formattedDate = tx.createdAt 
     ? new Date(tx.createdAt).toLocaleString() 
     : tx.timestamp 

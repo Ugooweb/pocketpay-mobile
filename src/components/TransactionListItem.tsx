@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { TransactionRecord } from '../store/walletStore';
 import { useAppStore } from '../store/appStore';
 import { resolveAddressLabel } from '../utils/contacts';
+import { formatAmount } from '../utils/amount';
 
 export interface TransactionListItemProps extends Omit<TouchableOpacityProps, 'onPress'> {
   /** The transaction data to display. */
@@ -47,7 +48,7 @@ export const TransactionListItem: React.FC<TransactionListItemProps> = ({
   const label = isSent ? 'Sent XLM' : 'Received XLM';
 
   const formattedAmount = tx.amount
-    ? `${isSent ? '-' : '+'}${tx.amount}`
+    ? `${isSent ? '-' : '+'}${formatAmount(tx.amount)}`
     : null;
 
   const formattedDate = tx.created_at

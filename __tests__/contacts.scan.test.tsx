@@ -319,7 +319,7 @@ describe("AC4 – duplicate detection", () => {
 
     await waitFor(() => {
       expect(
-        getByText("This address is already saved as a contact."),
+        getByText('This address is already saved as "Alice".'),
       ).toBeTruthy();
     });
   });

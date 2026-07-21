@@ -22,6 +22,18 @@ import { render } from '@testing-library/react-native';
 import { ScrollView } from 'react-native';
 
 jest.mock('../src/store/walletStore');
+jest.mock('../src/store/appStore', () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
 jest.mock('../src/services/stellar');
 jest.mock('expo-router');
 jest.mock('lucide-react-native', () => ({
@@ -204,7 +216,7 @@ describe('AC-W9 – balance rendering', () => {
   it('displays the current balance', () => {
     setup({ balance: '250.5000000' });
     const { getByText } = render(<HomeScreen />);
-    expect(getByText('250.5000000 XLM')).toBeTruthy();
+    expect(getByText('250.5 XLM')).toBeTruthy();
   });
 });
 

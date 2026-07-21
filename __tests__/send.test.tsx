@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Send Screen – Validation, Submit & QR Scan Behaviour Tests
  *
  * Acceptance criteria covered:
@@ -22,7 +22,18 @@ import { Alert } from 'react-native';
 
 jest.mock('../src/services/stellar');
 jest.mock('../src/store/walletStore');
-jest.mock('../src/store/appStore');
+jest.mock('../src/store/appStore', () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
 jest.mock('pocketpay-sdk', () => ({ validatePublicKey: jest.fn(() => true) }));
 jest.mock('expo-router');
 jest.mock('lucide-react-native', () => ({

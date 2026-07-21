@@ -20,6 +20,19 @@ jest.mock("../src/hooks/useOnlineStatus", () => ({
   useOnlineStatus: jest.fn(),
 }));
 
+jest.mock("../src/store/appStore", () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
+
 import { OfflineBanner } from "../src/components/OfflineBanner";
 import { useOnlineStatus } from "../src/hooks/useOnlineStatus";
 
@@ -110,8 +123,8 @@ describe("AC-OB5 – does not block UI", () => {
   });
 
   it("renders nothing when online (no UI impact)", () => {
-    const { container } = render(<OfflineBanner isOnline={true} />);
+    const { toJSON } = render(<OfflineBanner isOnline={true} />);
     // No banner means no obstruction
-    expect(container).toBeTruthy();
+    expect(toJSON()).toBeNull();
   });
 });
