@@ -81,12 +81,13 @@ export const validateAmount = (
  * Returns a readable error message, or null if valid.
  */
 export const validateMemo = (memo: string): string | null => {
-  if (!memo) {
+  const trimmedMemo = memo.trim();
+  if (!trimmedMemo) {
     return null;
   }
 
-  if (Buffer.byteLength(memo, 'utf8') > MEMO_MAX_BYTES) {
-    return `Memo is too long. Please keep it under ${MEMO_MAX_BYTES} characters.`;
+  if (Buffer.byteLength(trimmedMemo, 'utf8') > MEMO_MAX_BYTES) {
+    return `Memo is too long. Please keep it under ${MEMO_MAX_BYTES} bytes.`;
   }
 
   return null;
