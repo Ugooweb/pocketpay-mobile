@@ -195,7 +195,10 @@ export const VaultConfirmModal: React.FC<VaultConfirmModalProps> = ({
               activeOpacity={0.7}
             >
               {isLoading ? (
-                <ActivityIndicator color={colors.background} size="small" />
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator color={colors.background} size="small" style={{ marginRight: 6 }} />
+                  <Text style={styles.confirmButtonText}>Processing {actionType}…</Text>
+                </View>
               ) : (
                 <Text style={styles.confirmButtonText}>{config.actionLabel}</Text>
               )}
@@ -349,5 +352,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.background,
     fontSize: 15,
     fontWeight: '600',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

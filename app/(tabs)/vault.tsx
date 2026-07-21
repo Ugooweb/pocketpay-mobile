@@ -10,7 +10,7 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useWalletStore } from '../../src/store/walletStore';
 import { useVaultStore } from '../../src/store/vaultStore';
 import { validateAmount } from '../../src/utils/validation';
-import { PiggyBank, ShieldCheck, AlertTriangle, XCircle } from 'lucide-react-native';
+import { PiggyBank, ShieldCheck, AlertTriangle, XCircle, Info } from 'lucide-react-native';
 
 const LOCK_PERIOD_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const VAULT_INTRO_SEEN_KEY = '@pocketpay_vault_intro_seen';
@@ -74,7 +74,7 @@ export default function VaultScreen() {
     setAmountError(value.trim() ? validateAmount(value) ?? undefined : undefined);
   };
 
-  const handleAction = async (action: 'deposit' | 'withdraw') => {
+  const handleAction = (action: VaultAction) => {
     if (!publicKey) return;
 
     // Deposits are limited by the wallet balance; withdrawals by the vault balance.
@@ -86,18 +86,39 @@ export default function VaultScreen() {
     setAmountError(error);
     if (error) return;
 
+    setPendingAction(action);
+    if (action === 'lock') {
+      const unlockDate = new Date(Date.now() + LOCK_PERIOD_SECONDS * 1000);
+      setPendingUnlockTime(unlockDate.toLocaleDateString());
+    }
+    setConfirmVisible(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!publicKey || !pendingAction) return;
+
     try {
       const secret = await getSecretKey();
       if (!secret) throw new Error('Secret key not found');
 
+      if (pendingAction === 'lock') {
+        setConfirmVisible(false);
+        Alert.alert(
+          'Notice',
+          'Vault lock is not yet implemented. This is a placeholder for Soroban time-lock functionality.'
+        );
+        return;
+      }
+
       const hash =
-        action === 'deposit'
+        pendingAction === 'deposit'
           ? await deposit(secret, publicKey, amount)
           : await withdraw(secret, publicKey, amount);
 
       setAmount('');
       setAmountError(undefined);
-      const verb = action === 'deposit' ? 'deposited into' : 'withdrawn from';
+      setConfirmVisible(false);
+      const verb = pendingAction === 'deposit' ? 'deposited into' : 'withdrawn from';
       Alert.alert(
         'Success',
         hash
@@ -105,7 +126,11 @@ export default function VaultScreen() {
           : `Funds ${verb} the vault (mock — no real funds moved).`
       );
     } catch (e: any) {
-      Alert.alert(`${action === 'deposit' ? 'Deposit' : 'Withdrawal'} failed`, e.message);
+      setConfirmVisible(false);
+      Alert.alert(
+        `${pendingAction === 'deposit' ? 'Deposit' : 'Withdrawal'} failed`,
+        e.message
+      );
     }
   };
 
@@ -116,6 +141,16 @@ export default function VaultScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <VaultIntroModal visible={introVisible} onContinue={dismissIntro} />
+      <VaultConfirmModal
+        visible={confirmVisible}
+        actionType={pendingAction}
+        amount={amount}
+        isLoading={isSubmitting}
+        contractId={isConfigured ? contractId : undefined}
+        unlockTime={pendingAction === 'lock' ? pendingUnlockTime : undefined}
+        onConfirm={handleConfirmAction}
+        onCancel={cancelAction}
+      />
       <View style={styles.card}>
         <TouchableOpacity
           style={styles.infoButton}
@@ -213,7 +248,8 @@ export default function VaultScreen() {
             <Button
               title="Deposit"
               onPress={() => handleAction('deposit')}
-              isLoading={isSubmitting}
+              isLoading={isSubmitting && pendingAction === 'deposit'}
+              loadingText="Depositing…"
               disabled={isLoadingBalance}
               style={styles.actionButton}
             />
@@ -221,7 +257,8 @@ export default function VaultScreen() {
               title="Withdraw"
               variant="secondary"
               onPress={() => handleAction('withdraw')}
-              isLoading={isSubmitting}
+              isLoading={isSubmitting && pendingAction === 'withdraw'}
+              loadingText="Withdrawing…"
               disabled={isLoadingBalance}
               style={styles.actionButton}
             />
@@ -229,23 +266,9 @@ export default function VaultScreen() {
           <Button
             title="Lock Funds (30 days)"
             variant="outline"
-            onPress={() =>
-              Alert.alert(
-                'Lock Funds',
-                `Lock ${amount || '0'} XLM for 30 days? Locked funds cannot be withdrawn until the unlock time.`,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Confirm Lock',
-                    onPress: () =>
-                      Alert.alert(
-                        'Notice',
-                        'Vault lock is not yet implemented. This is a placeholder for Soroban time-lock functionality.'
-                      ),
-                  },
-                ]
-              )
-            }
+            onPress={() => handleAction('lock')}
+            isLoading={isSubmitting && pendingAction === 'lock'}
+            loadingText="Locking…"
             disabled={isSubmitting}
             style={styles.lockButton}
           />

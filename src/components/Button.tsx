@@ -7,12 +7,14 @@ interface ButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'destructive' | 'muted';
   isLoading?: boolean;
+  loadingText?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   title,
   variant = 'primary',
   isLoading = false,
+  loadingText = 'Processing…',
   style,
   disabled,
   ...props
@@ -62,7 +64,12 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={getTextColor()} />
+        <>
+          <ActivityIndicator color={getTextColor()} style={{ marginRight: 8 }} />
+          <Text style={[styles.text, { color: getTextColor() }]}>
+            {loadingText}
+          </Text>
+        </>
       ) : (
         <Text style={[styles.text, { color: getTextColor() }]}>
           {title}
