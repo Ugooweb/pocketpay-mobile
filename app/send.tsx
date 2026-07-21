@@ -1,17 +1,36 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Button } from '../src/components/Button';
-import { FormField } from '../src/components/FormField';
-import { QrScanner } from '../src/components/QrScanner';
-import { SIZES, RADIUS, ThemeColors } from '../src/constants/theme';
-import { useTheme } from '../src/hooks/useTheme';
-import { sendXlmTransaction } from '../src/services/stellar';
-import { useWalletStore } from '../src/store/walletStore';
-import { useAppStore } from '../src/store/appStore';
-import { validateAddress, validateAmount, validateMemo } from '../src/utils/validation';
-import { resolveAddressLabel } from '../src/utils/contacts';
-import { Send as SendIcon, ScanLine, ChevronDown, User } from 'lucide-react-native';
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Button } from "../src/components/Button";
+import { FormField } from "../src/components/FormField";
+import { QrScanner } from "../src/components/QrScanner";
+import { SIZES, RADIUS, ThemeColors } from "../src/constants/theme";
+import { useTheme } from "../src/hooks/useTheme";
+import { sendXlmTransaction } from "../src/services/stellar";
+import { useWalletStore } from "../src/store/walletStore";
+import { useAppStore } from "../src/store/appStore";
+import {
+  validateAddress,
+  validateAmount,
+  validateMemo,
+} from "../src/utils/validation";
+import { resolveAddressLabel } from "../src/utils/contacts";
+import {
+  Send as SendIcon,
+  ScanLine,
+  ChevronDown,
+  User,
+} from "lucide-react-native";
+import { ScreenHeader } from "@/components";
 
 interface FieldErrors {
   destination?: string;
@@ -23,26 +42,30 @@ export default function SendScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { publicKey, getSecretKey, refreshWalletData, balance } = useWalletStore();
+  const { publicKey, getSecretKey, refreshWalletData, balance } =
+    useWalletStore();
   const contacts = useAppStore((state) => state.contacts);
 
-  const [destination, setDestination] = useState('');
-  const [amount, setAmount] = useState('');
-  const [memo, setMemo] = useState('');
+  const [destination, setDestination] = useState("");
+  const [amount, setAmount] = useState("");
+  const [memo, setMemo] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [showContactPicker, setShowContactPicker] = useState(false);
 
-  const destinationContact = destination.trim() && !errors.destination
-    ? resolveAddressLabel(destination.trim(), contacts)
-    : null;
+  const destinationContact =
+    destination.trim() && !errors.destination
+      ? resolveAddressLabel(destination.trim(), contacts)
+      : null;
 
   const handleDestinationChange = (value: string) => {
     setDestination(value);
     setErrors((prev) => ({
       ...prev,
-      destination: value.trim() ? validateAddress(value, publicKey) ?? undefined : undefined,
+      destination: value.trim()
+        ? (validateAddress(value, publicKey) ?? undefined)
+        : undefined,
     }));
   };
 
@@ -50,7 +73,9 @@ export default function SendScreen() {
     setAmount(value);
     setErrors((prev) => ({
       ...prev,
-      amount: value.trim() ? validateAmount(value, balance) ?? undefined : undefined,
+      amount: value.trim()
+        ? (validateAmount(value, balance) ?? undefined)
+        : undefined,
     }));
   };
 
@@ -78,7 +103,7 @@ export default function SendScreen() {
 
   const handleScanError = (message: string) => {
     setIsScanning(false);
-    Alert.alert('Invalid QR Code', message);
+    Alert.alert("Invalid QR Code", message);
   };
 
   const handleScanClose = () => {
@@ -100,13 +125,18 @@ export default function SendScreen() {
     try {
       setIsLoading(true);
       const secretKey = await getSecretKey();
-      if (!secretKey) throw new Error('Secret key not found.');
+      if (!secretKey) throw new Error("Secret key not found.");
 
-      const result = await sendXlmTransaction(secretKey, destination.trim(), amount.trim(), memo.trim());
+      const result = await sendXlmTransaction(
+        secretKey,
+        destination.trim(),
+        amount.trim(),
+        memo.trim(),
+      );
 
       refreshWalletData();
       router.replace({
-        pathname: '/payment-success',
+        pathname: "/payment-success",
         params: {
           hash: result.hash,
           amount: amount.trim(),
@@ -114,7 +144,10 @@ export default function SendScreen() {
         },
       });
     } catch (error: any) {
-      Alert.alert('Transaction Failed', error.message || 'An error occurred while sending.');
+      Alert.alert(
+        "Transaction Failed",
+        error.message || "An error occurred while sending.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -124,13 +157,13 @@ export default function SendScreen() {
     <>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Send XLM</Text>
-          <Text style={styles.subtitle}>Available Balance: {balance} XLM</Text>
-        </View>
+        <ScreenHeader
+          title="Send XLM"
+          subtitle={`Available Balance: ${balance} XLM`}
+        />
 
         <View style={styles.form}>
           <FormField
@@ -164,7 +197,9 @@ export default function SendScreen() {
               >
                 <User size={18} color={colors.primary} />
                 <Text style={styles.contactPickerText}>
-                  {showContactPicker ? 'Hide contacts' : 'Choose from saved contacts'}
+                  {showContactPicker
+                    ? "Hide contacts"
+                    : "Choose from saved contacts"}
                 </Text>
                 <ChevronDown size={16} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -178,7 +213,11 @@ export default function SendScreen() {
                       onPress={() => handleSelectContact(contact.publicKey)}
                     >
                       <Text style={styles.contactName}>{contact.name}</Text>
-                      <Text style={styles.contactKey} numberOfLines={1} ellipsizeMode="middle">
+                      <Text
+                        style={styles.contactKey}
+                        numberOfLines={1}
+                        ellipsizeMode="middle"
+                      >
                         {contact.publicKey}
                       </Text>
                     </TouchableOpacity>
@@ -239,84 +278,71 @@ export default function SendScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: SIZES.xl,
-  },
-  header: {
-    marginBottom: SIZES.xl,
-    marginTop: SIZES.md,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SIZES.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  form: {
-    flex: 1,
-  },
-  contactPickerContainer: {
-    marginBottom: SIZES.md,
-  },
-  contactPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
-    gap: SIZES.sm,
-  },
-  contactPickerText: {
-    flex: 1,
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  contactList: {
-    marginTop: SIZES.xs,
-    backgroundColor: colors.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: SIZES.sm,
-    maxHeight: 200,
-  },
-  contactItem: {
-    paddingVertical: SIZES.sm,
-    paddingHorizontal: SIZES.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  contactName: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  contactKey: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  contactMatch: {
-    marginTop: -SIZES.sm,
-    marginBottom: SIZES.md,
-  },
-  contactMatchText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  sendButton: {
-    marginBottom: SIZES.xxl,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: SIZES.xl,
+    },
+    form: {
+      flex: 1,
+    },
+    contactPickerContainer: {
+      marginBottom: SIZES.md,
+    },
+    contactPickerButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SIZES.md,
+      paddingVertical: SIZES.md,
+      gap: SIZES.sm,
+    },
+    contactPickerText: {
+      flex: 1,
+      color: colors.primary,
+      fontWeight: "600",
+      fontSize: 14,
+    },
+    contactList: {
+      marginTop: SIZES.xs,
+      backgroundColor: colors.surface,
+      borderRadius: RADIUS.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: SIZES.sm,
+      maxHeight: 200,
+    },
+    contactItem: {
+      paddingVertical: SIZES.sm,
+      paddingHorizontal: SIZES.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    contactName: {
+      color: colors.textPrimary,
+      fontWeight: "600",
+      fontSize: 14,
+      marginBottom: 2,
+    },
+    contactKey: {
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    contactMatch: {
+      marginTop: -SIZES.sm,
+      marginBottom: SIZES.md,
+    },
+    contactMatchText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "500",
+    },
+    sendButton: {
+      marginBottom: SIZES.xxl,
+    },
+  });

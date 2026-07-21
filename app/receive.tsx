@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Share } from 'react-native';
-import { Button } from '../src/components/Button';
-import { SIZES, RADIUS, ThemeColors } from '../src/constants/theme';
-import { useTheme } from '../src/hooks/useTheme';
-import { useWalletStore } from '../src/store/walletStore';
-import QRCode from 'react-native-qrcode-svg';
-import * as Clipboard from 'expo-clipboard';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet, Share } from "react-native";
+import { Button } from "../src/components/Button";
+import { ScreenHeader } from "../src/components/ScreenHeader";
+import { SIZES, RADIUS, ThemeColors } from "../src/constants/theme";
+import { useTheme } from "../src/hooks/useTheme";
+import { useWalletStore } from "../src/store/walletStore";
+import QRCode from "react-native-qrcode-svg";
+import * as Clipboard from "expo-clipboard";
 
 export default function ReceiveScreen() {
   const { colors } = useTheme();
@@ -22,17 +23,17 @@ export default function ReceiveScreen() {
     if (publicKey) {
       await Share.share({
         message: publicKey,
-        title: 'My Stellar Address'
+        title: "My Stellar Address",
       });
     }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Receive XLM</Text>
-        <Text style={styles.subtitle}>Show this QR code to receive payments on the Stellar Testnet.</Text>
-      </View>
+      <ScreenHeader
+        title="Receive XLM"
+        subtitle="Show this QR code to receive payments on the Stellar Testnet."
+      />
 
       <View style={styles.qrContainer}>
         {publicKey ? (
@@ -50,7 +51,9 @@ export default function ReceiveScreen() {
       <View style={styles.addressContainer}>
         <Text style={styles.addressLabel}>Your Public Key</Text>
         <View style={styles.addressBox}>
-          <Text style={styles.addressText} selectable>{publicKey}</Text>
+          <Text style={styles.addressText} selectable>
+            {publicKey}
+          </Text>
         </View>
       </View>
 
@@ -71,63 +74,48 @@ export default function ReceiveScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: SIZES.xl,
-    alignItems: 'center',
-  },
-  header: {
-    width: '100%',
-    marginBottom: SIZES.xl,
-    marginTop: SIZES.md,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SIZES.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  qrContainer: {
-    backgroundColor: colors.textPrimary,
-    padding: SIZES.lg,
-    borderRadius: RADIUS.lg,
-    marginBottom: SIZES.xl,
-  },
-  addressContainer: {
-    width: '100%',
-    marginBottom: SIZES.xl,
-  },
-  addressLabel: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginBottom: SIZES.xs,
-  },
-  addressBox: {
-    backgroundColor: colors.surface,
-    padding: SIZES.md,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addressText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  actions: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionButton: {
-    flex: 1,
-    marginHorizontal: SIZES.xs,
-  }
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: SIZES.xl,
+      alignItems: "center",
+    },
+    qrContainer: {
+      backgroundColor: colors.textPrimary,
+      padding: SIZES.lg,
+      borderRadius: RADIUS.lg,
+      marginBottom: SIZES.xl,
+    },
+    addressContainer: {
+      width: "100%",
+      marginBottom: SIZES.xl,
+    },
+    addressLabel: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      marginBottom: SIZES.xs,
+    },
+    addressBox: {
+      backgroundColor: colors.surface,
+      padding: SIZES.md,
+      borderRadius: RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    addressText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      textAlign: "center",
+    },
+    actions: {
+      width: "100%",
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    actionButton: {
+      flex: 1,
+      marginHorizontal: SIZES.xs,
+    },
+  });
