@@ -2,20 +2,19 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../src/hooks/useTheme';
+import { useVault } from '../../src/hooks/useVault';
 import { SIZES, RADIUS, ThemeColors } from '../../src/constants/theme';
 import { Lock } from '../../src/store/vaultStore';
-import { MOCK_VAULT_LOCKS } from '../../tests/fixtures/vaultLocks'; // Using mock data for now
-import { VaultLockDetail } from '../../src/components/VaultLockDetail'; // Will create this component next
+import { VaultLockDetail } from '../../src/components/VaultLockDetail';
 
 export default function VaultLockDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { locks, isLoadingLocks, findLock } = useVault();
 
-  // In a real scenario, you would fetch the lock details from your store or API
-  // For now, we'll use mock data
-  const lock: Lock | undefined = MOCK_VAULT_LOCKS.find(lock => lock.id === id);
-  const isLoading = false; // Mock loading state
+  const lock: Lock | undefined = findLock(typeof id === 'string' ? id : '');
+  const isLoading = isLoadingLocks;
 
   if (isLoading) {
     return (

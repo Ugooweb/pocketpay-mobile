@@ -1,10 +1,20 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { VaultLockList } from '../../src/components/VaultLockList';
+import { VaultConfirmModal } from '../../src/components/VaultConfirmModal';
+import { VaultIntroModal } from '../../src/components/VaultIntroModal';
+import { VaultLockEducationModal } from '../../src/components/VaultLockEducationModal';
+import { Input } from '../../src/components/Input';
+import { AsyncActionButton } from '../../src/components/AsyncActionButton';
 import { SIZES, RADIUS, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useVault } from '../../src/hooks/useVault';
-import { PiggyBank } from 'lucide-react-native';
+import { useVaultDepositForm } from '../../src/features/vault/useVaultDepositForm';
+import { useWalletStore } from '../../src/store/walletStore';
+import { validateAmount } from '../../src/utils/validation';
+import { PiggyBank, Info, Lock, HelpCircle, ShieldCheck, AlertTriangle, XCircle } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LOCK_PERIOD_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const VAULT_INTRO_SEEN_KEY = '@pocketpay_vault_intro_seen';
@@ -12,19 +22,97 @@ const VAULT_INTRO_SEEN_KEY = '@pocketpay_vault_intro_seen';
 export default function VaultScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
+
+  // Wallet & Vault stores
   const { publicKey, getSecretKey, balance: walletBalance } = useWalletStore();
-  const { locks } = useVault();
-  const isLoadingLocks = false;
+  const {
+    balance,
+    locks,
+    lockedBalance,
+    unlockTime,
+    isConfigured,
+    contractId,
+    isLoadingBalance,
+    isLoadingLocks,
+    isSubmitting,
+    balanceError,
+    loadBalance,
+    loadLocks,
+    addLock,
+    unlockLock,
+    loadLockedState,
+    lockFunds,
+    deposit,
+    withdraw,
+  } = useVault();
+
+  // Vault form
+  const depositForm = useVaultDepositForm();
+
+  // UI state
+  const [introVisible, setIntroVisible] = useState(false);
+  const [lockEducationVisible, setLockEducationVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'deposit' | 'withdraw' | 'lock' | null>(null);
+  const [pendingUnlockDate, setPendingUnlockDate] = useState<string>('');
+
+  // Local helpers
+  const isVaultUnavailable = !publicKey;
+  const isMissingContractId = isVaultUnavailable && !isConfigured;
+  const isMissingRpcUrl = false; // For now, default to testnet RPC
+  const isLocked = parseFloat(lockedBalance) > 0;
+
+  // Initial setup
+  useEffect(() => {
+    const checkIntro = async () => {
+      const seen = await AsyncStorage.getItem(VAULT_INTRO_SEEN_KEY);
+      if (!seen) {
+        setIntroVisible(true);
+      }
+    };
+    checkIntro();
+  }, []);
+
+  useEffect(() => {
+    if (publicKey) {
+      loadBalance(publicKey);
+      loadLocks();
+      loadLockedState();
+    }
+  }, [publicKey, loadBalance, loadLocks, loadLockedState]);
+
+  // Handlers
+  const dismissIntro = async () => {
+    await AsyncStorage.setItem(VAULT_INTRO_SEEN_KEY, 'true');
+    setIntroVisible(false);
+  };
+
+  const handleAmountChange = (value: string) => {
+    depositForm.setAmount(value);
+    depositForm.setAmountError(undefined);
+  };
+
+  const handleAction = async (action: 'deposit' | 'withdraw' | 'lock') => {
+    // Validate amount
+    let amountError: string | undefined;
+    if (action === 'deposit') {
       const isValid = depositForm.validate(walletBalance);
       if (!isValid) return;
-    } else {
-      const error =
-        validateAmount(amount, undefined) ??
-        (action === 'withdraw' && Number(amount) > Number(balance)
+    } else if (action === 'withdraw') {
+      amountError = validateAmount(depositForm.amount, balance) ??
+        (parseFloat(depositForm.amount) > parseFloat(balance)
           ? "You don't have enough XLM in the vault for this withdrawal."
           : undefined);
-      depositForm.setAmountError(error);
-      if (error) return;
+      depositForm.setAmountError(amountError);
+      if (amountError) return;
+    } else { // lock
+      amountError = validateAmount(depositForm.amount, walletBalance) ??
+        (parseFloat(depositForm.amount) > parseFloat(walletBalance)
+          ? "You don't have enough XLM in your wallet for this lock."
+          : undefined);
+      depositForm.setAmountError(amountError);
+      if (amountError) return;
     }
 
     setPendingAction(action);
@@ -40,12 +128,11 @@ export default function VaultScreen() {
 
     try {
       if (pendingAction === 'lock') {
-        await addLock(amount, pendingUnlockDate);
+        const unlockDate = new Date(Date.now() + LOCK_PERIOD_SECONDS * 1000);
+        await addLock(depositForm.amount, unlockDate.toISOString());
+        await lockFunds(depositForm.amount, unlockDate.toLocaleDateString());
         setConfirmVisible(false);
-        Alert.alert('Success', `Locked ${amount} XLM until ${pendingUnlockDate} (mock)`);
-        await lockFunds(amount, pendingUnlockTime);
-        setConfirmVisible(false);
-        Alert.alert('Success', `Locked ${amount} XLM until ${pendingUnlockTime} (mock)`);
+        Alert.alert('Success', `Locked ${depositForm.amount} XLM until ${unlockDate.toLocaleDateString()} (mock)`);
         depositForm.setAmount('');
         depositForm.setAmountError(undefined);
         return;
@@ -57,7 +144,7 @@ export default function VaultScreen() {
       } else {
         const secret = await getSecretKey();
         if (!secret) throw new Error('Secret key not found');
-        hash = await withdraw(secret, publicKey, amount);
+        hash = await withdraw(secret, publicKey, depositForm.amount);
         depositForm.setAmount('');
         depositForm.setAmountError(undefined);
       }
@@ -91,7 +178,6 @@ export default function VaultScreen() {
       Alert.alert('Unlock failed', e.message);
     }
   };
-  const isLocked = parseFloat(lockedBalance) > 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -104,8 +190,8 @@ export default function VaultScreen() {
       />
       <VaultConfirmModal
         visible={confirmVisible}
-        actionType={pendingAction}
-        amount={amount}
+        actionType={pendingAction || 'deposit'}
+        amount={depositForm.amount}
         isLoading={isSubmitting || depositForm.isSubmitting}
         contractId={isConfigured ? contractId : undefined}
         unlockTime={pendingAction === 'lock' ? pendingUnlockDate : undefined}
@@ -222,10 +308,10 @@ export default function VaultScreen() {
           <Input
             label="Amount (XLM)"
             placeholder="0.00"
-            value={amount}
+            value={depositForm.amount}
             onChangeText={handleAmountChange}
             keyboardType="decimal-pad"
-            error={amountError}
+            error={depositForm.amountError}
             editable={!(isSubmitting || depositForm.isSubmitting)}
           />
           <View style={styles.actions}>

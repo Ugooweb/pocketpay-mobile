@@ -14,23 +14,20 @@ import {
 } from '../services/stellar';
 
 const LOCKS_KEY = '@pocketpay_vault_locks';
+const LOCKED_BALANCE_KEY = '@pocketpay_vault_locked_balance';
+const UNLOCK_TIME_KEY = '@pocketpay_vault_unlock_time';
 
 export interface Lock {
   id: string;
   amount: string;
-  unlockDate: string; // ISO string or date string
+  unlockDate: string;
   status: 'locked' | 'matured';
-  createdAt: string; // ISO string
+  createdAt: string;
 }
 
 interface VaultState {
   balance: string;
   locks: Lock[];
-const LOCKED_BALANCE_KEY = '@pocketpay_vault_locked_balance';
-const UNLOCK_TIME_KEY = '@pocketpay_vault_unlock_time';
-
-interface VaultState {
-  balance: string;
   lockedBalance: string;
   unlockTime: string | null;
   isConfigured: boolean;
@@ -83,7 +80,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const locksJson = await AsyncStorage.getItem(LOCKS_KEY);
       let locks: Lock[] = locksJson ? JSON.parse(locksJson) : [];
       
-      // Update lock statuses based on current date
+      // Update lock statuses based on current time
       const now = new Date();
       locks = locks.map(lock => {
         const unlockDate = new Date(lock.unlockDate);
@@ -123,6 +120,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const updatedLocks = get().locks.filter(lock => lock.id !== lockId);
       await AsyncStorage.setItem(LOCKS_KEY, JSON.stringify(updatedLocks));
       set({ locks: updatedLocks });
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+
   loadLockedState: async () => {
     try {
       const [lockedBalance, unlockTime] = await Promise.all([

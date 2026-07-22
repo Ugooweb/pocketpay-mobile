@@ -8,8 +8,8 @@ import { Lock, Clock, AlertCircle, X } from 'lucide-react-native';
 interface VaultLockEducationModalProps {
   visible: boolean;
   onClose: () => void;
-  lockedBalance: string;
-  unlockTime: string | null;
+  lockedBalance?: string;
+  unlockTime?: string | null;
 }
 
 export const VaultLockEducationModal: React.FC<VaultLockEducationModalProps> = ({
@@ -21,7 +21,7 @@ export const VaultLockEducationModal: React.FC<VaultLockEducationModalProps> = (
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const isLocked = parseFloat(lockedBalance) > 0 && unlockTime !== null;
+  const isLocked = lockedBalance && parseFloat(lockedBalance) > 0 && unlockTime;
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
@@ -89,9 +89,6 @@ export const VaultLockEducationModal: React.FC<VaultLockEducationModalProps> = (
                 <Text style={styles.pointTitle}>Multiple locks</Text>
                 <Text style={styles.pointBody}>
                   You can create multiple independent locks, each with their own amount and unlock date.
-                <Text style={styles.pointTitle}>Unlock time</Text>
-                <Text style={styles.pointBody}>
-                  The unlock date and time are set when you lock the funds. There's no way to unlock early — the contract enforces the time lock.
                 </Text>
               </View>
             </View>

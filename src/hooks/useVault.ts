@@ -1,37 +1,50 @@
-import { create } from 'zustand';
-import { VaultLock } from '../types';
+import { useVaultStore, Lock } from '../store/vaultStore';
 
-interface VaultState {
-  locks: VaultLock[];
-  findLock: (id: string) => VaultLock | undefined;
-  withdraw: (id: string) => void;
+export type { Lock };
+
+export function useVault() {
+  const {
+    balance,
+    locks,
+    lockedBalance,
+    unlockTime,
+    isConfigured,
+    contractId,
+    isLoadingBalance,
+    isLoadingLocks,
+    isSubmitting,
+    balanceError,
+    loadBalance,
+    loadLocks,
+    addLock,
+    unlockLock,
+    loadLockedState,
+    lockFunds,
+    deposit,
+    withdraw,
+  } = useVaultStore();
+
+  const findLock = (id: string) => locks.find(lock => lock.id === id);
+
+  return {
+    balance,
+    locks,
+    lockedBalance,
+    unlockTime,
+    isConfigured,
+    contractId,
+    isLoadingBalance,
+    isLoadingLocks,
+    isSubmitting,
+    balanceError,
+    loadBalance,
+    loadLocks,
+    addLock,
+    unlockLock,
+    loadLockedState,
+    lockFunds,
+    deposit,
+    withdraw,
+    findLock,
+  };
 }
-
-const mockLocks: VaultLock[] = [
-  {
-    id: '1',
-    amount: '1000',
-    createdAt: new Date().toISOString(),
-    unlockedAt: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 30).toISOString(), // 30 days from now
-    status: 'locked',
-  },
-  {
-    id: '2',
-    amount: '500',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 60).toISOString(), // 60 days ago
-    unlockedAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(), // 30 days ago
-    status: 'unlocked',
-  },
-];
-
-export const useVault = create<VaultState>((set, get) => ({
-  locks: mockLocks,
-  findLock: (id: string) => {
-    return get().locks.find(lock => lock.id === id);
-  },
-  withdraw: (id: string) => {
-    set(state => ({
-      locks: state.locks.filter(lock => lock.id !== id),
-    }));
-  },
-}));

@@ -3,16 +3,21 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'rea
 import { SIZES, RADIUS, ThemeColors } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { useRouter } from 'expo-router';
+import { Lock, CheckCircle, Clock } from 'lucide-react-native';
 import { Lock as LockType } from '../hooks/useVault';
 
 interface VaultLockListProps {
   locks: LockType[];
   isLoading: boolean;
+  onUnlock?: (lockId: string) => void;
+  onInfoPress?: () => void;
 }
 
 export const VaultLockList: React.FC<VaultLockListProps> = ({
   locks,
   isLoading,
+  onUnlock,
+  onInfoPress,
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -48,11 +53,11 @@ export const VaultLockList: React.FC<VaultLockListProps> = ({
       {locks.map((lock) => (
         <TouchableOpacity key={lock.id} onPress={() => handlePress(lock.id)} style={styles.lockItem}>
           <View style={[styles.lockIconContainer, {
-            backgroundColor: lock.status === 'unlocked' 
+            backgroundColor: lock.status === 'matured' 
               ? 'rgba(0, 230, 118, 0.12)' 
               : 'rgba(123, 97, 255, 0.12)',
           }]}>
-            {lock.status === 'unlocked' ? (
+            {lock.status === 'matured' ? (
               <CheckCircle color={colors.success} size={24} />
             ) : (
               <Lock color={colors.secondary} size={24} />
@@ -62,16 +67,16 @@ export const VaultLockList: React.FC<VaultLockListProps> = ({
             <View style={styles.lockHeader}>
               <Text style={styles.lockAmount}>{lock.amount} XLM</Text>
               <View style={[styles.statusBadge, {
-                backgroundColor: lock.status === 'unlocked' 
+                backgroundColor: lock.status === 'matured' 
                   ? 'rgba(0, 230, 118, 0.12)' 
                   : 'rgba(123, 97, 255, 0.12)',
               }]}>
                 <Text style={[styles.statusText, {
-                  color: lock.status === 'unlocked' 
+                  color: lock.status === 'matured' 
                     ? colors.success 
                     : colors.secondary,
                 }]}>
-                  {lock.status === 'unlocked' ? 'Unlocked' : 'Locked'}
+                  {lock.status === 'matured' ? 'Matured' : 'Locked'}
                 </Text>
               </View>
             </View>
@@ -79,9 +84,17 @@ export const VaultLockList: React.FC<VaultLockListProps> = ({
               <View style={styles.unlockDateContainer}>
                 <Clock color={colors.textMuted} size={14} style={styles.clockIcon} />
                 <Text style={styles.unlockDateText}>
-                  {lock.status === 'unlocked' ? 'Unlocked' : `Unlocks ${new Date(lock.unlockedAt).toLocaleDateString()}`}
+                  {lock.status === 'matured' ? 'Unlocked' : `Unlocks ${new Date(lock.unlockDate).toLocaleDateString()}`}
                 </Text>
               </View>
+              {lock.status === 'matured' && onUnlock && (
+                <TouchableOpacity 
+                  style={styles.unlockButton} 
+                  onPress={() => onUnlock(lock.id)}
+                >
+                  <Text style={styles.unlockButtonText}>Unlock</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </TouchableOpacity>

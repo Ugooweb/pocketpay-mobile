@@ -1,7 +1,1 @@
-export interface VaultLock {
-  id: string;
-  amount: string;
-  createdAt: string;
-  unlockedAt: string;
-  status: 'locked' | 'unlocked';
-}
+export type { Lock as VaultLock } from '../store/vaultStore';
