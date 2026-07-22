@@ -16,6 +16,7 @@ React Native Expo wallet for Stellar Testnet. The app aims to feel polished and 
 - [Polyfills Guide](./docs/polyfills.md) - React Native polyfills and import order for Stellar SDK
 - [Vault UI Guidance](./docs/vault-ui-guidance.md) - How to present the Soroban Savings Vault, Testnet risks, and contract limitations
 - [Vault Integration Risks](./docs/vault-integration-risks.md) - Assumptions, risks, and integration points between the mobile UI, PocketPay SDK, and Soroban contract
+- [Mobile Wallet Security FAQ](./docs/WALLET_SECURITY_FAQ.md) - Local storage, secret handling, reset behaviors, and security guarantees
 
 > ⚠️ **This app runs on the Stellar Testnet only.** Testnet XLM has no real monetary value. Read the [Security Guide](docs/security.md) before storing or sharing any keys.
 
@@ -45,15 +46,15 @@ PocketPay Mobile is part of a broader PocketPay stack:
 
 > 📸 Screenshots below are placeholders. To update them, capture each screen from a simulator or device (use dummy/funded Testnet data only — never real keys or mainnet funds) and replace the files in `docs/screenshots/`.
 
-|                    Wallet                     |                   Send                    |                     Receive                     |
-| :-------------------------------------------: | :---------------------------------------: | :---------------------------------------------: |
+|                    Wallet                     |                  Send                  |                     Receive                      |
+| :-------------------------------------------: | :------------------------------------: | :----------------------------------------------: |
 | ![Wallet screen](docs/screenshots/wallet.png) | ![Send screen](docs/screenshots/send.png) | ![Receive screen](docs/screenshots/receive.png) |
-|     _Balance overview and quick actions_      |     _Send XLM to any Stellar address_     |          _QR code for your public key_          |
+|      _Balance overview and quick actions_      |     _Send XLM to any Stellar address_  |          _QR code for your public key_           |
 
-|                      Activity                       |                     Contacts                      |                    Vault                    |
-| :-------------------------------------------------: | :-----------------------------------------------: | :-----------------------------------------: |
-|  ![Activity screen](docs/screenshots/activity.png)  | ![Contacts screen](docs/screenshots/contacts.png) | ![Vault screen](docs/screenshots/vault.png) |
-| _Transaction history with sent/received indicators_ |        _Saved addresses for quick access_         |       _Soroban Savings Vault (mock)_        |
+|                       Activity                       |                     Contacts                      |                    Vault                    |
+| :--------------------------------------------------: | :-----------------------------------------------: | :-----------------------------------------: |
+|  ![Activity screen](docs/screenshots/activity.png)   | ![Contacts screen](docs/screenshots/contacts.png) | ![Vault screen](docs/screenshots/vault.png) |
+| _Transaction history with sent/received indicators_  |        _Saved addresses for quick access_         |       _Soroban Savings Vault (mock)_        |
 
 ### Updating screenshots
 
@@ -73,7 +74,6 @@ React Native, Expo Router, Zustand, PocketPay SDK, SecureStore, AsyncStorage
 npm install --legacy-peer-deps
 cp .env.example .env
 npm start
-```
 
 The PocketPay SDK is pinned to an official source commit and built by the
 app's `postinstall` script because the SDK is not currently published to npm.
