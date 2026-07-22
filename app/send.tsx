@@ -128,7 +128,15 @@ export default function SendScreen() {
     if (fieldErrors.destination || fieldErrors.amount || fieldErrors.memo) {
       return;
     }
-    setShowSigningConfirm(true);
+    // Navigate to the full review screen for the signer handoff flow
+    router.push({
+      pathname: '/review-transaction',
+      params: {
+        destination: destination.trim(),
+        amount: amount.trim(),
+        memo: memo.trim(),
+      },
+    });
   };
 
   const handleCancelSign = () => {

@@ -97,6 +97,18 @@ console.log('public key:', keypair.publicKey());
 
 ---
 
+## Signer Handoff Design
+
+PocketPay uses a signer abstraction layer to separate transaction construction from signing. This design ensures that:
+
+- **Secret keys never leave SecureStore.** The `Signer` interface receives a transaction builder callback, not the secret key. Each signer implementation is responsible for obtaining signing material through its own secure channel.
+- **External signers are future-safe.** The architecture supports adding external wallet apps (via deep-link) or hardware wallets (via BLE/USB) without modifying the core payment flow. The `Signer` interface is designed for this extension.
+- **No private key is exposed to the network.** Signing always happens either on-device (local signer) or within a separate secure application (external signer). The secret key is never transmitted, logged, or stored outside the platform-encrypted SecureStore.
+
+See [signer-handoff-design.md](./signer-handoff-design.md) for the full architecture and type reference.
+
+---
+
 ## Reporting a Security Issue
 
 If you discover a security vulnerability, please do **not** open a public GitHub issue. Instead, contact the maintainers directly via the email listed in the repository profile. We aim to respond within 72 hours.

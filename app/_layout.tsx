@@ -33,7 +33,7 @@ export default function RootLayout() {
     if (publicKey && inAuthGroup) {
       // User is signed in and trying to access auth screens, redirect to main
       router.replace('/(tabs)');
-    } else if (!publicKey && !inAuthGroup && segments[0] !== '(tabs)' && segments[0] !== 'send' && segments[0] !== 'receive') {
+    } else if (!publicKey && !inAuthGroup && segments[0] !== '(tabs)' && segments[0] !== 'send' && segments[0] !== 'receive' && segments[0] !== 'review-transaction') {
       // User is NOT signed in and trying to access main screens, redirect to auth
       router.replace('/(auth)');
     }
