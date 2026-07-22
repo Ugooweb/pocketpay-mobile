@@ -18,6 +18,7 @@ React Native Expo wallet for Stellar Testnet. The app aims to feel polished and 
 - [Vault Integration Risks](./docs/vault-integration-risks.md) - Assumptions, risks, and integration points between the mobile UI, PocketPay SDK, and Soroban contract
 - [Mobile Wallet Security FAQ](./docs/WALLET_SECURITY_FAQ.md) - Local storage, secret handling, reset behaviors, and security guarantees
 - [Accessibility Checklist](./docs/accessibility.md) - Mobile accessibility audit checklist for labels, touch targets, contrast, focus, screen-reader, and error/loading states
+- [UI State Catalogue](./docs/ui-states.md) - Screen-by-screen loading, empty, error, success, disabled, and pending states for wallet, send, receive, transactions, contacts, and vault
 
 > ⚠️ **This app runs on the Stellar Testnet only.** Testnet XLM has no real monetary value. Read the [Security Guide](docs/security.md) before storing or sharing any keys.
 
@@ -42,7 +43,7 @@ PocketPay Mobile is part of a broader PocketPay stack:
 
 - [Screen Inventory](docs/screen-inventory.md) - A map of the main screens and routes in the app.
 - [Mobile Onboarding Checklist](docs/mobile-onboarding-checklist.md) - Quick-reference setup checklist for new contributors
-- [UI State Catalogue](docs/ui-states.md) - Loading, empty, error, success, and disabled states for wallet, send, receive, transactions, contacts, and vault
+- [UI State Catalogue](docs/ui-states.md) - The canonical reference for loading, empty, error, success, disabled, and pending states across the main screens
 
 ## Screenshots
 
