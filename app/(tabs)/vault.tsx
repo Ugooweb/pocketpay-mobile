@@ -1,19 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AsyncActionButton } from '../../src/components/AsyncActionButton';
-import { Input } from '../../src/components/Input';
-import { VaultConfirmModal, VaultAction } from '../../src/components/VaultConfirmModal';
-import { VaultIntroModal } from '../../src/components/VaultIntroModal';
-import { VaultLockEducationModal } from '../../src/components/VaultLockEducationModal';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { VaultLockList } from '../../src/components/VaultLockList';
 import { SIZES, RADIUS, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
-import { useWalletStore } from '../../src/store/walletStore';
-import { useVaultStore } from '../../src/store/vaultStore';
-import { validateAmount } from '../../src/utils/validation';
-import { useVaultDepositForm } from '../../src/features/vault/useVaultDepositForm';
-import { PiggyBank, ShieldCheck, AlertTriangle, XCircle, Info, Lock, HelpCircle } from 'lucide-react-native';
+import { useVault } from '../../src/hooks/useVault';
+import { PiggyBank } from 'lucide-react-native';
 
 const LOCK_PERIOD_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const VAULT_INTRO_SEEN_KEY = '@pocketpay_vault_intro_seen';
@@ -22,82 +13,8 @@ export default function VaultScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { publicKey, getSecretKey, balance: walletBalance } = useWalletStore();
-  const {
-    balance,
-    locks,
-    lockedBalance,
-    unlockTime,
-    isConfigured,
-    contractId,
-    isLoadingBalance,
-    isLoadingLocks,
-    isSubmitting,
-    balanceError,
-    loadBalance,
-    loadLocks,
-    addLock,
-    unlockLock,
-    loadLockedState,
-    lockFunds,
-    deposit,
-    withdraw,
-  } = useVaultStore();
-
-  const depositForm = useVaultDepositForm();
-  const amount = depositForm.amount;
-  const amountError = depositForm.amountError;
-  const setAmount = depositForm.setAmount;
-  const setAmountError = depositForm.setAmountError;
-
-  const [isLoadingActivity] = useState(false);
-
-  // Vault unavailable state
-  const isMissingContractId = !isConfigured;
-  const isMissingRpcUrl = !process.env.EXPO_PUBLIC_SOROBAN_RPC_URL;
-  const isVaultUnavailable = isMissingContractId || isMissingRpcUrl;
-
-  // Confirmation modal state
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [pendingAction, setPendingAction] = useState<VaultAction>('deposit');
-  const [pendingUnlockDate, setPendingUnlockDate] = useState('');
-
-  // Vault introduction modal state
-  const [introVisible, setIntroVisible] = useState(false);
-
-  // Lock education modal state
-  const [lockEducationVisible, setLockEducationVisible] = useState(false);
-
-  useEffect(() => {
-    if (publicKey) {
-      loadBalance(publicKey);
-    }
-    loadLocks();
-    loadLockedState();
-  }, [publicKey]);
-
-  useEffect(() => {
-    AsyncStorage.getItem(VAULT_INTRO_SEEN_KEY)
-      .then((seen) => {
-        if (!seen) setIntroVisible(true);
-      })
-      .catch(() => setIntroVisible(true));
-  }, []);
-
-  const dismissIntro = () => {
-    setIntroVisible(false);
-    AsyncStorage.setItem(VAULT_INTRO_SEEN_KEY, 'true').catch((e) =>
-      console.error('Failed to save vault intro state:', e)
-    );
-  };
-
-  const handleAmountChange = (value: string) => {
-    depositForm.setAmount(value);
-  };
-
-  const handleAction = (action: VaultAction) => {
-    if (!publicKey) return;
-
-    if (action === 'deposit') {
+  const { locks } = useVault();
+  const isLoadingLocks = false;
       const isValid = depositForm.validate(walletBalance);
       if (!isValid) return;
     } else {
