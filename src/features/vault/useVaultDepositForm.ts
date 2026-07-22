@@ -1,3 +1,10 @@
+/**
+ * Vault deposit form hook.
+ *
+ * For integration risks, assumptions, and coordination notes,
+ * see docs/vault-integration-risks.md.
+ */
+
 import { useState } from 'react';
 import { validateAmount } from '../../utils/validation';
 
