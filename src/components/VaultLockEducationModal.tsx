@@ -70,10 +70,25 @@ export const VaultLockEducationModal: React.FC<VaultLockEducationModalProps> = (
             </View>
 
             <View style={styles.point}>
+              <View style={[styles.pointIcon, { backgroundColor: 'rgba(0, 230, 118, 0.12)' }]}>
+                <Clock color={colors.success} size={18} />
+              </View>
+              <View style={styles.pointText}>
+                <Text style={styles.pointTitle}>Matured locks</Text>
+                <Text style={styles.pointBody}>
+                  Once the unlock date passes, locks become "matured" and you can unlock the funds.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.point}>
               <View style={[styles.pointIcon, { backgroundColor: 'rgba(0, 229, 255, 0.12)' }]}>
                 <Clock color={colors.primary} size={18} />
               </View>
               <View style={styles.pointText}>
+                <Text style={styles.pointTitle}>Multiple locks</Text>
+                <Text style={styles.pointBody}>
+                  You can create multiple independent locks, each with their own amount and unlock date.
                 <Text style={styles.pointTitle}>Unlock time</Text>
                 <Text style={styles.pointBody}>
                   The unlock date and time are set when you lock the funds. There's no way to unlock early — the contract enforces the time lock.

@@ -6,6 +6,7 @@ import { Input } from '../../src/components/Input';
 import { VaultConfirmModal, VaultAction } from '../../src/components/VaultConfirmModal';
 import { VaultIntroModal } from '../../src/components/VaultIntroModal';
 import { VaultLockEducationModal } from '../../src/components/VaultLockEducationModal';
+import { VaultLockList } from '../../src/components/VaultLockList';
 import { SIZES, RADIUS, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useWalletStore } from '../../src/store/walletStore';
@@ -23,14 +24,19 @@ export default function VaultScreen() {
   const { publicKey, getSecretKey, balance: walletBalance } = useWalletStore();
   const {
     balance,
+    locks,
     lockedBalance,
     unlockTime,
     isConfigured,
     contractId,
     isLoadingBalance,
+    isLoadingLocks,
     isSubmitting,
     balanceError,
     loadBalance,
+    loadLocks,
+    addLock,
+    unlockLock,
     loadLockedState,
     lockFunds,
     deposit,
@@ -53,7 +59,7 @@ export default function VaultScreen() {
   // Confirmation modal state
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<VaultAction>('deposit');
-  const [pendingUnlockTime, setPendingUnlockTime] = useState('');
+  const [pendingUnlockDate, setPendingUnlockDate] = useState('');
 
   // Vault introduction modal state
   const [introVisible, setIntroVisible] = useState(false);
@@ -65,6 +71,7 @@ export default function VaultScreen() {
     if (publicKey) {
       loadBalance(publicKey);
     }
+    loadLocks();
     loadLockedState();
   }, [publicKey]);
 
@@ -106,7 +113,7 @@ export default function VaultScreen() {
     setPendingAction(action);
     if (action === 'lock') {
       const unlockDate = new Date(Date.now() + LOCK_PERIOD_SECONDS * 1000);
-      setPendingUnlockTime(unlockDate.toLocaleDateString());
+      setPendingUnlockDate(unlockDate.toLocaleDateString());
     }
     setConfirmVisible(true);
   };
@@ -116,6 +123,9 @@ export default function VaultScreen() {
 
     try {
       if (pendingAction === 'lock') {
+        await addLock(amount, pendingUnlockDate);
+        setConfirmVisible(false);
+        Alert.alert('Success', `Locked ${amount} XLM until ${pendingUnlockDate} (mock)`);
         await lockFunds(amount, pendingUnlockTime);
         setConfirmVisible(false);
         Alert.alert('Success', `Locked ${amount} XLM until ${pendingUnlockTime} (mock)`);
@@ -156,6 +166,14 @@ export default function VaultScreen() {
     setConfirmVisible(false);
   };
 
+  const handleUnlock = async (lockId: string) => {
+    try {
+      await unlockLock(lockId);
+      Alert.alert('Success', 'Funds unlocked! (mock)');
+    } catch (e: any) {
+      Alert.alert('Unlock failed', e.message);
+    }
+  };
   const isLocked = parseFloat(lockedBalance) > 0;
 
   return (
@@ -173,7 +191,7 @@ export default function VaultScreen() {
         amount={amount}
         isLoading={isSubmitting || depositForm.isSubmitting}
         contractId={isConfigured ? contractId : undefined}
-        unlockTime={pendingAction === 'lock' ? pendingUnlockTime : undefined}
+        unlockTime={pendingAction === 'lock' ? pendingUnlockDate : undefined}
         onConfirm={handleConfirmAction}
         onCancel={cancelAction}
       />
@@ -209,6 +227,12 @@ export default function VaultScreen() {
         )}
       </View>
 
+      <VaultLockList
+        locks={locks}
+        isLoading={isLoadingLocks}
+        onUnlock={handleUnlock}
+        onInfoPress={() => setLockEducationVisible(true)}
+      />
       {isLocked && unlockTime ? (
         <View style={styles.lockedFundsBox}>
           <View style={styles.lockedFundsHeader}>

@@ -7,3 +7,4 @@ export { Button } from "./Button";
 export { VaultConfirmModal, VaultAction } from "./VaultConfirmModal";
 export { VaultIntroModal } from "./VaultIntroModal";
 export { VaultLockEducationModal } from "./VaultLockEducationModal";
+export { VaultLockList } from "./VaultLockList";
