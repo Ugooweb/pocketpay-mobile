@@ -62,7 +62,13 @@ export default function RootLayout() {
             text: 'Reset Wallet',
             style: 'destructive',
             onPress: async () => {
-              await clearWallet();
+              const cleared = await clearWallet();
+              if (!cleared) {
+                Alert.alert(
+                  'Reset Failed',
+                  'PocketPay could not clear secure storage on this device. Please restart the app and try again, or check your device storage permissions.'
+                );
+              }
             }
           }
         ]

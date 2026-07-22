@@ -40,6 +40,11 @@ export default function SettingsScreen() {
       if (secret) {
         setSecretKey(secret);
         setShowSecret(true);
+      } else {
+        Alert.alert(
+          'Unable to Access Secret Key',
+          'PocketPay could not read your wallet from secure storage. This can happen if your device is locked, restarted, or restricts keychain access. Try again, or unlock your device and retry.'
+        );
       }
     } else {
       setShowSecret(false);

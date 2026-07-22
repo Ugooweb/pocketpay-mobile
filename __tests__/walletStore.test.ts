@@ -122,5 +122,26 @@ describe('walletStore secure storage handling', () => {
     expect(useWalletStore.getState().balance).toBe('10.0000000');
     expect(useWalletStore.getState().error).toBe('Failed to clear wallet securely');
   });
+
+  it('sets a distinguishable error when getSecretKey read fails, without leaking the secret', async () => {
+    mockedSecureStore.getItemAsync.mockRejectedValueOnce(new Error('Keystore unavailable'));
+
+    const key = await useWalletStore.getState().getSecretKey();
+
+    expect(key).toBeNull();
+    expect(useWalletStore.getState().error).toBe('Failed to read wallet securely');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to read wallet securely');
+    expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toContain('Keystore unavailable');
+  });
+
+  it('clears any prior error when getSecretKey succeeds', async () => {
+    useWalletStore.setState({ error: 'Failed to read wallet securely' });
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce('SVALIDSECRET');
+
+    const key = await useWalletStore.getState().getSecretKey();
+
+    expect(key).toBe('SVALIDSECRET');
+    expect(useWalletStore.getState().error).toBeNull();
+  });
 });
 

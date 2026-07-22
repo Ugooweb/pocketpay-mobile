@@ -9,6 +9,7 @@ const TX_PAGE_SIZE = 20;
 const PERSIST_WALLET_ERROR = 'Failed to persist wallet securely';
 const RESTORE_WALLET_ERROR = 'Failed to restore wallet securely';
 const CLEAR_WALLET_ERROR = 'Failed to clear wallet securely';
+const READ_WALLET_ERROR = 'Failed to read wallet securely';
 
 // Transaction records from the Stellar Horizon API – use a flexible type
 // until a proper typed SDK wrapper is available.
@@ -213,9 +214,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   getSecretKey: async () => {
     try {
-      return await SecureStore.getItemAsync(WALLET_KEY);
+      const value = await SecureStore.getItemAsync(WALLET_KEY);
+      if (value !== null) set({ error: null });
+      return value;
     } catch {
-      console.error('Failed to read wallet securely');
+      console.error(READ_WALLET_ERROR);
+      set({ error: READ_WALLET_ERROR });
       return null;
     }
   },
