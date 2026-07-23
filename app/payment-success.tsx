@@ -16,10 +16,11 @@ import { formatAmount } from '../src/utils/amount';
  */
 export default function PaymentSuccessScreen() {
   const router = useRouter();
-  const { hash, amount, destination } = useLocalSearchParams<{
+  const { hash, amount, destination, date } = useLocalSearchParams<{
     hash?: string;
     amount?: string;
     destination?: string;
+    date?: string;
   }>();
   const contacts = useAppStore((state) => state.contacts);
   const [hashCopied, setHashCopied] = useState(false);
@@ -33,6 +34,13 @@ export default function PaymentSuccessScreen() {
 
   const explorerUrl = getExplorerTxUrl(hash);
   const destinationLabel = destination ? resolveAddressLabel(destination, contacts) : null;
+  const formattedDate = date ? new Date(date).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) : '—';
 
   const handleCopyHash = async () => {
     if (!hash) return;
@@ -59,6 +67,15 @@ export default function PaymentSuccessScreen() {
           <Text style={styles.rowLabel}>Amount</Text>
           <Text style={styles.amountValue}>{formatAmount(amount)} XLM</Text>
         </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Date</Text>
+        </View>
+        <Text style={styles.addressValue}>
+          {formattedDate}
+        </Text>
 
         <View style={styles.divider} />
 
