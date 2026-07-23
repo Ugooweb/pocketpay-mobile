@@ -141,6 +141,7 @@ export default function SendScreen() {
           hash: result.hash,
           amount: amount.trim(),
           destination: destination.trim(),
+          date: new Date().toISOString(),
         },
       });
     } catch (error: any) {
