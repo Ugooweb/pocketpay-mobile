@@ -20,6 +20,18 @@ jest.mock('expo-router');
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(async () => {}),
 }));
+jest.mock('../src/store/appStore', () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
 jest.mock('lucide-react-native', () => ({
   CheckCircle: () => null,
   Copy: () => null,

@@ -8,6 +8,7 @@ import { COLORS, SIZES, RADIUS } from '../src/constants/theme';
 import { getExplorerTxUrl } from '../src/services/stellar';
 import { useAppStore } from '../src/store/appStore';
 import { resolveAddressLabel } from '../src/utils/contacts';
+import { formatAmount } from '../src/utils/amount';
 
 /**
  * Payment receipt shown after a successful send. Never render the wallet's
@@ -64,7 +65,7 @@ export default function PaymentSuccessScreen() {
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>Amount</Text>
-          <Text style={styles.amountValue}>{amount ?? '—'} XLM</Text>
+          <Text style={styles.amountValue}>{formatAmount(amount)} XLM</Text>
         </View>
 
         <View style={styles.divider} />

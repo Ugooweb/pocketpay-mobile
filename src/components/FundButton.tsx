@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Button } from './Button';
+import { AsyncActionButton } from './AsyncActionButton';
 import { SIZES, RADIUS, ThemeColors } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { Zap, AlertTriangle } from 'lucide-react-native';
@@ -50,10 +50,11 @@ export const FundButton: React.FC<FundButtonProps> = ({
           </View>
         ) : null}
 
-        <Button
-          title={isFunding ? 'Funding…' : 'Fund with Friendbot'}
+        <AsyncActionButton
+          title="Fund with Friendbot"
           onPress={onFund}
           isLoading={isFunding}
+          loadingText="Funding…"
           variant="secondary"
           style={styles.button}
         />

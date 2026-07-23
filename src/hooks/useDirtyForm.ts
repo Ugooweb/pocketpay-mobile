@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { useRouter } from 'expo-router';
 
 interface UseDirtyFormOptions {
   /** Whether the form is currently dirty (has unsaved changes) */
@@ -27,22 +27,6 @@ interface UseDirtyFormReturn {
 
 /**
  * Hook to handle dirty form protection
- * 
- * @param options - Configuration options
- * @returns Dirty state controls
- * 
- * @example
- * ```tsx
- * const { showConfirm, setShowConfirm, handleConfirmLeave, handleCancelLeave, resetDirty } = useDirtyForm({
- *   isDirty: formIsDirty,
- *   message: 'You have unsaved changes. Are you sure you want to leave?',
- *   onConfirmLeave: () => {
- *     // Clear form and navigate
- *     resetDirty();
- *     navigate('/somewhere');
- *   }
- * });
- * ```
  */
 export function useDirtyForm({
   isDirty,
@@ -51,64 +35,24 @@ export function useDirtyForm({
   onCancelLeave,
 }: UseDirtyFormOptions): UseDirtyFormReturn {
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
-  const navigate = useNavigate();
-
-  // Use blocker to intercept navigation attempts
-  const blocker = useBlocker(
-    useCallback(() => {
-      // Only block if form is dirty
-      return isDirty;
-    }, [isDirty])
-  );
-
-  // Handle browser navigation (back/forward)
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = message;
-        return message;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty, message]);
-
-  // Handle route changes (React Router)
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      setShowConfirm(true);
-      setPendingNavigation(() => blocker.proceed);
-    }
-  }, [blocker]);
+  const router = useRouter();
 
   const handleConfirmLeave = useCallback(() => {
     setShowConfirm(false);
-    if (pendingNavigation) {
-      pendingNavigation();
-      setPendingNavigation(null);
-    }
     if (onConfirmLeave) {
       onConfirmLeave();
     }
-  }, [pendingNavigation, onConfirmLeave]);
+  }, [onConfirmLeave]);
 
   const handleCancelLeave = useCallback(() => {
     setShowConfirm(false);
-    setPendingNavigation(null);
-    if (blocker.state === 'blocked') {
-      blocker.reset();
-    }
     if (onCancelLeave) {
       onCancelLeave();
     }
-  }, [blocker, onCancelLeave]);
+  }, [onCancelLeave]);
 
   const resetDirty = useCallback(() => {
     setShowConfirm(false);
-    setPendingNavigation(null);
   }, []);
 
   return {

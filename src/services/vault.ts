@@ -11,6 +11,9 @@ import * as StellarSdk from '@stellar/stellar-sdk';
  * Amounts are i128 stroops (1 XLM = 10,000,000 stroops).
  * When EXPO_PUBLIC_VAULT_CONTRACT_ID is not set, the vault screen falls back
  * to the mock helpers in stellar.ts and no real funds are moved.
+ *
+ * For integration risks, assumptions, and coordination notes,
+ * see docs/vault-integration-risks.md.
  */
 
 const SOROBAN_RPC_URL =

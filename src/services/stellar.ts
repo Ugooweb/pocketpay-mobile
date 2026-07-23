@@ -108,7 +108,7 @@ export interface TransactionsPage {
  * @param publicKey  – Stellar public key to query.
  * @param limit      – Page size (default 20).
  * @param cursor     – Paging token from a previous page to continue from.
- *                     Pass `undefined` / omit to start from the latest.
+ *                    Pass `undefined` / omit to start from the latest.
  */
 export const fetchTransactionsPage = async (
   publicKey: string,
@@ -263,17 +263,3 @@ export const getExplorerTxUrl = (hash: string | null | undefined): string | null
   if (!explorerNetwork) return null;
   return `https://stellar.expert/explorer/${explorerNetwork}/tx/${hash}`;
 };
-
-export const fundWithFriendbot = async (publicKey: string): Promise<void> => {
-  try {
-    const url = `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Friendbot error: ${response.statusText}`);
-    }
-  } catch (error: any) {
-    console.error('Friendbot funding failed:', error);
-    throw new Error(error.message || 'Friendbot funding failed');
-  }
-};
-

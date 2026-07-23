@@ -56,8 +56,16 @@ export const SecretKeyReveal: React.FC<SecretKeyRevealProps> = ({
   };
 
   const handleCopy = async () => {
-    await Clipboard.setStringAsync(secretKey);
-    Alert.alert('Copied', 'Secret key copied to clipboard. Keep it safe!');
+    try {
+      await Clipboard.setStringAsync(secretKey);
+      Alert.alert('Copied', 'Secret key copied to clipboard. Keep it safe!');
+    } catch {
+      console.error('Failed to copy secret key to clipboard');
+      Alert.alert(
+        'Copy Failed',
+        'Could not copy to clipboard. You can select and copy the revealed key manually instead.'
+      );
+    }
   };
 
   return (

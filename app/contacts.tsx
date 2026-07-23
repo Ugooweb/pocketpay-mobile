@@ -18,11 +18,7 @@ import { Input } from "../src/components/Input";
 import { QrScanner } from "../src/components/QrScanner";
 import { SIZES, RADIUS, ThemeColors } from "../src/constants/theme";
 import { useTheme } from "../src/hooks/useTheme";
-import {
-  useAppStore,
-  Contact,
-  normalizePublicKey,
-} from "../src/store/appStore";
+import { useAppStore, Contact } from "../src/store/appStore";
 import { validateAddress } from "../src/utils/validation";
 import { Trash2, User } from "lucide-react-native";
 import { EmptyState } from "../src/components/EmptyState";
@@ -37,7 +33,8 @@ type Mode =
 export default function ContactsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { contacts, addContact, removeContact } = useAppStore();
+  const { contacts, addContactIfUnique, removeContact, findDuplicateContact } =
+    useAppStore();
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<Mode>("list");
@@ -59,33 +56,6 @@ export default function ContactsScreen() {
     setIsSaving(false);
   }, []);
 
-  /** Returns true when the address already exists in the contact list. */
-  const isDuplicateAddress = useCallback(
-    (address: string) =>
-      contacts.some(
-        (c) => normalizePublicKey(c.publicKey) === normalizePublicKey(address),
-      ),
-    [contacts],
-  );
-
-  /** Returns the existing contact with the same address, or undefined. */
-  const findExistingContactByAddress = useCallback(
-    (address: string) =>
-      contacts.find(
-        (c) => normalizePublicKey(c.publicKey) === normalizePublicKey(address),
-      ),
-    [contacts],
-  );
-
-  /** Returns the existing contact with the same name (different address), or undefined. */
-  const findExistingContactByName = useCallback(
-    (contactName: string) => {
-      const normalized = contactName.trim().toLowerCase();
-      return contacts.find((c) => c.name.trim().toLowerCase() === normalized);
-    },
-    [contacts],
-  );
-
   // ── Field change handlers ───────────────────────────────────────────────────
 
   const handleNameChange = (value: string) => {
@@ -93,11 +63,9 @@ export default function ContactsScreen() {
     if (nameError && value.trim()) setNameError(undefined);
     // Check for duplicate name (case-insensitive) — warn but don't block
     if (value.trim()) {
-      const existing = findExistingContactByName(value);
-      if (existing) {
-        setNameWarning(
-          `You already have a contact named "${existing.name}". You can still save another with a different address.`,
-        );
+      const result = findDuplicateContact(value, publicKey || "G");
+      if (result.type === "name") {
+        setNameWarning(result.message);
       } else {
         setNameWarning(undefined);
       }
@@ -117,8 +85,10 @@ export default function ContactsScreen() {
       setKeyError(addrError);
       return;
     }
-    if (isDuplicateAddress(value)) {
-      setKeyError("This address is already saved as a contact.");
+    // Check for duplicate address using the store's centralized logic
+    const result = findDuplicateContact(name || "temp", value);
+    if (result.type === "address") {
+      setKeyError(result.message);
       return;
     }
     setKeyError(undefined);
@@ -132,24 +102,12 @@ export default function ContactsScreen() {
 
     const currentNameError = trimmedName ? undefined : "Please enter a name.";
     const addrValidationError = validateAddress(trimmedKey) ?? undefined;
-    const duplicateError = isDuplicateAddress(trimmedKey)
-      ? "This address is already saved as a contact."
-      : undefined;
-    const currentKeyError = addrValidationError ?? duplicateError;
+    const currentKeyError = addrValidationError;
 
     setNameError(currentNameError);
     setKeyError(currentKeyError);
 
     if (currentNameError || currentKeyError) return;
-
-    // Double-check address duplicate before saving (blocking — address is the stronger identifier)
-    const existingContact = findExistingContactByAddress(trimmedKey);
-    if (existingContact) {
-      setKeyError(
-        `This address is already saved as "${existingContact.name}". You cannot add duplicate addresses.`,
-      );
-      return;
-    }
 
     const newContact: Contact = {
       id: Date.now().toString(),
@@ -159,7 +117,13 @@ export default function ContactsScreen() {
 
     try {
       setIsSaving(true);
-      await addContact(newContact);
+      const result = await addContactIfUnique(newContact);
+
+      if (result.type === "address") {
+        setKeyError(result.message);
+        return;
+      }
+
       resetForm();
       setMode("list");
     } catch {
@@ -173,13 +137,10 @@ export default function ContactsScreen() {
 
   const handleScanSuccess = useCallback(
     (address: string) => {
-      // Check for duplicates immediately after a successful scan.
-      const existing = findExistingContactByAddress(address);
-      if (existing) {
-        Alert.alert(
-          "Already saved",
-          `This address is already in your contacts as "${existing.name}".`,
-        );
+      // Check for duplicates using the store's centralized logic.
+      const result = findDuplicateContact("", address);
+      if (result.type === "address") {
+        Alert.alert("Already saved", result.message);
         setMode("list");
         return;
       }
@@ -187,7 +148,7 @@ export default function ContactsScreen() {
       setPublicKey(address);
       setMode("confirm-scan");
     },
-    [findExistingContactByAddress],
+    [findDuplicateContact],
   );
 
   const handleScanError = useCallback((message: string) => {

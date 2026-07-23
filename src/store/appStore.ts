@@ -19,6 +19,15 @@ export function isValidThemeMode(value: unknown): value is ThemeMode {
 
 const DEFAULT_THEME_MODE: ThemeMode = "dark";
 
+export interface DuplicateCheckResult {
+  /** true if a duplicate was found and the contact should not be saved. */
+  isDuplicate: boolean;
+  /** The type of duplicate detected. */
+  type: "address" | "name" | "none";
+  /** A user-facing message describing the conflict, if any. */
+  message: string;
+}
+
 interface AppState {
   contacts: Contact[];
   themeMode: ThemeMode;
@@ -27,9 +36,15 @@ interface AppState {
   // Actions
   initializeApp: () => Promise<void>;
   addContact: (contact: Contact) => Promise<void>;
+  addContactIfUnique: (contact: Contact) => Promise<DuplicateCheckResult>;
   removeContact: (id: string) => Promise<void>;
   findContactByPublicKey: (publicKey: string) => Contact | undefined;
   findContactByName: (name: string) => Contact | undefined;
+  findDuplicateContact: (
+    name: string,
+    publicKey: string,
+    excludeId?: string,
+  ) => DuplicateCheckResult;
   setThemeMode: (mode: ThemeMode) => Promise<void>;
 }
 
@@ -89,6 +104,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  addContactIfUnique: async (contact: Contact) => {
+    const duplicateCheck = get().findDuplicateContact(
+      contact.name,
+      contact.publicKey,
+    );
+
+    if (duplicateCheck.isDuplicate) {
+      return duplicateCheck;
+    }
+
+    await get().addContact(contact);
+    return { isDuplicate: false, type: "none", message: "" };
+  },
+
   removeContact: async (id: string) => {
     const newContacts = get().contacts.filter((c) => c.id !== id);
     set({ contacts: newContacts });
@@ -100,6 +129,46 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (e) {
       console.error("Failed to remove contact:", e);
     }
+  },
+
+  findDuplicateContact: (
+    name: string,
+    publicKey: string,
+    excludeId?: string,
+  ) => {
+    const contacts = get().contacts;
+
+    // Address is the stronger duplicate identifier — check it first.
+    const normalizedKey = normalizePublicKey(publicKey);
+    const addressMatch = contacts.find(
+      (c) =>
+        c.id !== excludeId && normalizePublicKey(c.publicKey) === normalizedKey,
+    );
+    if (addressMatch) {
+      return {
+        isDuplicate: true,
+        type: "address" as const,
+        message: `This address is already saved as "${addressMatch.name}".`,
+      };
+    }
+
+    // Name duplicates are non-blocking warnings.
+    const normalizedName = name.trim().toLowerCase();
+    if (normalizedName) {
+      const nameMatch = contacts.find(
+        (c) =>
+          c.id !== excludeId && c.name.trim().toLowerCase() === normalizedName,
+      );
+      if (nameMatch) {
+        return {
+          isDuplicate: false,
+          type: "name" as const,
+          message: `You already have a contact named "${nameMatch.name}". You can still save another with a different address.`,
+        };
+      }
+    }
+
+    return { isDuplicate: false, type: "none" as const, message: "" };
   },
 
   findContactByPublicKey: (publicKey: string) => {

@@ -1,5 +1,5 @@
-import { validatePublicKey } from 'pocketpay-sdk';
-import { Buffer } from 'buffer';
+import { validatePublicKey } from "pocketpay-sdk";
+import { Buffer } from "buffer";
 
 // Stellar text memos are limited to 28 bytes.
 export const MEMO_MAX_BYTES = 28;
@@ -8,17 +8,25 @@ export const MEMO_MAX_BYTES = 28;
 export const MIN_XLM_RESERVE = 1;
 
 /**
+ * Normalize a Stellar public key for consistent comparison.
+ * Trims whitespace and uppercases the key.
+ */
+function normalizeKey(publicKey: string): string {
+  return publicKey.trim().toUpperCase();
+}
+
+/**
  * Validate a Stellar destination address.
  * Returns a readable error message, or null if valid.
  */
 export const validateAddress = (
   address: string,
-  ownPublicKey?: string | null
+  ownPublicKey?: string | null,
 ): string | null => {
   const trimmed = address.trim();
 
   if (!trimmed) {
-    return 'Please enter a destination address.';
+    return "Please enter a destination address.";
   }
 
   try {
@@ -34,6 +42,87 @@ export const validateAddress = (
   return null;
 };
 
+// ── Contact-specific validation ─────────────────────────────────────────────
+
+export interface ContactRecord {
+  id: string;
+  name: string;
+  publicKey: string;
+}
+
+export interface ContactValidationResult {
+  /** null if no conflict, otherwise an error/warning message. */
+  message: string | null;
+  /** The severity of the conflict. 'error' blocks saving; 'warning' is advisory. */
+  severity: "error" | "warning";
+}
+
+/**
+ * Check whether a public key already exists in the given contact list.
+ * Returns an error result (blocking) if a duplicate is found.
+ *
+ * @param publicKey - The address to check.
+ * @param contacts  - The current list of saved contacts.
+ * @param excludeId - Optional contact ID to exclude from the check (used when editing an existing contact).
+ */
+export function validateContactAddress(
+  publicKey: string,
+  contacts: ContactRecord[],
+  excludeId?: string,
+): ContactValidationResult {
+  const trimmed = publicKey.trim();
+  if (!trimmed) {
+    return { message: null, severity: "error" };
+  }
+
+  const normalized = normalizeKey(trimmed);
+  const existing = contacts.find(
+    (c) => c.id !== excludeId && normalizeKey(c.publicKey) === normalized,
+  );
+
+  if (existing) {
+    return {
+      message: `This address is already saved as "${existing.name}".`,
+      severity: "error",
+    };
+  }
+
+  return { message: null, severity: "error" };
+}
+
+/**
+ * Check whether a display name already exists in the given contact list.
+ * Returns a warning result (non-blocking) if a duplicate name is found.
+ *
+ * @param name      - The display name to check.
+ * @param contacts  - The current list of saved contacts.
+ * @param excludeId - Optional contact ID to exclude from the check (used when editing).
+ */
+export function validateContactName(
+  name: string,
+  contacts: ContactRecord[],
+  excludeId?: string,
+): ContactValidationResult {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { message: null, severity: "warning" };
+  }
+
+  const normalized = trimmed.toLowerCase();
+  const existing = contacts.find(
+    (c) => c.id !== excludeId && c.name.trim().toLowerCase() === normalized,
+  );
+
+  if (existing) {
+    return {
+      message: `You already have a contact named "${existing.name}". You can still save another with a different address.`,
+      severity: "warning",
+    };
+  }
+
+  return { message: null, severity: "warning" };
+}
+
 /**
  * Validate a payment amount. If a balance is provided, also checks
  * that the amount can actually be sent.
@@ -41,26 +130,26 @@ export const validateAddress = (
  */
 export const validateAmount = (
   amount: string,
-  balance?: string
+  balance?: string,
 ): string | null => {
   const trimmed = amount.trim();
 
   if (!trimmed) {
-    return 'Please enter an amount.';
+    return "Please enter an amount.";
   }
 
   const value = Number(trimmed);
   if (!/^\d+(\.\d+)?$/.test(trimmed) || Number.isNaN(value)) {
-    return 'Please enter a valid number.';
+    return "Please enter a valid number.";
   }
 
   if (value <= 0) {
-    return 'Amount must be more than 0.';
+    return "Amount must be more than 0.";
   }
 
-  const decimals = trimmed.split('.')[1];
+  const decimals = trimmed.split(".")[1];
   if (decimals && decimals.length > 7) {
-    return 'Amount can have at most 7 decimal places.';
+    return "Amount can have at most 7 decimal places.";
   }
 
   if (balance !== undefined) {
@@ -86,7 +175,7 @@ export const validateMemo = (memo: string): string | null => {
     return null;
   }
 
-  if (Buffer.byteLength(trimmedMemo, 'utf8') > MEMO_MAX_BYTES) {
+  if (Buffer.byteLength(trimmedMemo, "utf8") > MEMO_MAX_BYTES) {
     return `Memo is too long. Please keep it under ${MEMO_MAX_BYTES} bytes.`;
   }
 

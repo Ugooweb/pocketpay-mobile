@@ -40,6 +40,22 @@ jest.mock('../src/services/stellar', () => ({
   fundWithFriendbot: jest.fn(),
 }));
 
+// Mock AsyncStorage with an in-memory store so persistence across calls
+// (and injected failures) can be asserted, mirroring the SecureStore mock above.
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store: Record<string, string> = {};
+  return {
+    getItem: jest.fn(async (key: string) => store[key] ?? null),
+    setItem: jest.fn(async (key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn(async (key: string) => {
+      delete store[key];
+    }),
+  };
+});
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchXlmBalance, fetchTransactionsPage, fundWithFriendbot } from '../src/services/stellar';
 import { useWalletStore } from '../src/store/walletStore';
 
@@ -47,6 +63,7 @@ const mockFetchXlmBalance = fetchXlmBalance as jest.MockedFunction<typeof fetchX
 const mockFetchTransactionsPage = fetchTransactionsPage as jest.MockedFunction<typeof fetchTransactionsPage>;
 const mockFundWithFriendbot = fundWithFriendbot as jest.MockedFunction<typeof fundWithFriendbot>;
 const mockedSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
+const mockedAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 
 const resetStore = () => {
   useWalletStore.setState({
@@ -60,6 +77,7 @@ const resetStore = () => {
     isLoadingMore: false,
     hasMoreTransactions: false,
     nextCursor: null,
+    showBackupReminder: false,
   });
 };
 
@@ -67,9 +85,12 @@ describe('useWalletStore State Transitions', () => {
   let consoleErrorSpy: jest.SpyInstance;
   let consoleWarnSpy: jest.SpyInstance;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     resetStore();
+    // The AsyncStorage mock's backing store is a module-level object that
+    // survives jest.clearAllMocks(), so clear it explicitly between tests.
+    await mockedAsyncStorage.removeItem('@pocketpay_backup_acknowledged');
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
@@ -142,6 +163,16 @@ describe('useWalletStore State Transitions', () => {
       const restored = await useWalletStore.getState().loadWalletFromStorage();
       expect(restored).toBe(false);
       expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledWith('pocketpay_wallet_secret');
+    });
+
+    it('does not delete credentials if secure storage read throws an error', async () => {
+      mockedSecureStore.getItemAsync.mockRejectedValueOnce(new Error('Device locked or permission denied'));
+      const restored = await useWalletStore.getState().loadWalletFromStorage();
+      expect(restored).toBe(false);
+      const state = useWalletStore.getState();
+      expect(state.publicKey).toBeNull();
+      expect(state.error).toBe('Failed to restore wallet securely');
+      expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
     });
 
     it('restores successfully from valid JSON secret with secretKey field', async () => {
@@ -254,6 +285,76 @@ describe('useWalletStore State Transitions', () => {
       mockedSecureStore.getItemAsync.mockRejectedValueOnce(new Error('Read error'));
       const key = await useWalletStore.getState().getSecretKey();
       expect(key).toBeNull();
+    });
+  });
+
+  // 7. Backup Reminder Flow
+  describe('Backup Reminder Flow', () => {
+    it('shows the reminder and persists it as pending on markBackupPending', async () => {
+      await useWalletStore.getState().markBackupPending();
+
+      expect(useWalletStore.getState().showBackupReminder).toBe(true);
+      expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
+        '@pocketpay_backup_acknowledged',
+        'false'
+      );
+    });
+
+    it('hides the reminder and persists it as acknowledged on acknowledgeBackupReminder', async () => {
+      await useWalletStore.getState().markBackupPending();
+
+      await useWalletStore.getState().acknowledgeBackupReminder();
+
+      expect(useWalletStore.getState().showBackupReminder).toBe(false);
+      expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
+        '@pocketpay_backup_acknowledged',
+        'true'
+      );
+    });
+
+    it('re-shows the reminder on restore if it was left pending from a prior session', async () => {
+      // Simulate: user created a wallet, the reminder was marked pending,
+      // then the app was killed before they acknowledged it.
+      await useWalletStore.getState().markBackupPending();
+      resetStore(); // Fresh in-memory state, as on a real app relaunch.
+
+      mockedSecureStore.getItemAsync.mockResolvedValueOnce('SVALIDSECRET');
+      const restored = await useWalletStore.getState().loadWalletFromStorage();
+
+      expect(restored).toBe(true);
+      expect(useWalletStore.getState().showBackupReminder).toBe(true);
+    });
+
+    it('does not show the reminder on restore once it has been acknowledged', async () => {
+      await useWalletStore.getState().markBackupPending();
+      await useWalletStore.getState().acknowledgeBackupReminder();
+      resetStore();
+
+      mockedSecureStore.getItemAsync.mockResolvedValueOnce('SVALIDSECRET');
+      const restored = await useWalletStore.getState().loadWalletFromStorage();
+
+      expect(restored).toBe(true);
+      expect(useWalletStore.getState().showBackupReminder).toBe(false);
+    });
+
+    it('does not show the reminder on restore for a wallet that never had one pending (e.g. imported)', async () => {
+      resetStore();
+
+      mockedSecureStore.getItemAsync.mockResolvedValueOnce('SVALIDSECRET');
+      const restored = await useWalletStore.getState().loadWalletFromStorage();
+
+      expect(restored).toBe(true);
+      expect(useWalletStore.getState().showBackupReminder).toBe(false);
+    });
+
+    it('clears the persisted backup-ack flag on clearWallet', async () => {
+      await useWalletStore.getState().markBackupPending();
+      useWalletStore.setState({ publicKey: 'GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H' });
+
+      await useWalletStore.getState().clearWallet();
+
+      expect(useWalletStore.getState().showBackupReminder).toBe(false);
+      expect(mockedAsyncStorage.removeItem).toHaveBeenCalledWith('@pocketpay_backup_acknowledged');
     });
   });
 });

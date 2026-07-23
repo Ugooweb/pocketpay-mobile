@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Button } from "../src/components/Button";
+import { AsyncActionButton } from "../src/components/AsyncActionButton";
 import { FormField } from "../src/components/FormField";
 import { QrScanner } from "../src/components/QrScanner";
 import { SIZES, RADIUS, ThemeColors } from "../src/constants/theme";
@@ -24,13 +24,14 @@ import {
   validateMemo,
 } from "../src/utils/validation";
 import { resolveAddressLabel } from "../src/utils/contacts";
+import { formatAmount } from "../src/utils/amount";
 import {
   Send as SendIcon,
   ScanLine,
   ChevronDown,
   User,
 } from "lucide-react-native";
-import { ScreenHeader } from "@/components";
+import { ScreenHeader, SigningConfirmModal } from "@/components";
 
 interface FieldErrors {
   destination?: string;
@@ -38,6 +39,12 @@ interface FieldErrors {
   memo?: string;
 }
 
+const getNetworkLabel = (): string => {
+  const network = (process.env.EXPO_PUBLIC_STELLAR_NETWORK || "TESTNET").toUpperCase();
+  if (network === "PUBLIC" || network === "MAINNET") return "Public Network";
+  if (network === "TESTNET") return "Testnet";
+  return network;
+};
 export default function SendScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -53,6 +60,8 @@ export default function SendScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [showContactPicker, setShowContactPicker] = useState(false);
+  const [showSigningConfirm, setShowSigningConfirm] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
 
   const destinationContact =
     destination.trim() && !errors.destination
@@ -109,32 +118,45 @@ export default function SendScreen() {
   const handleScanClose = () => {
     setIsScanning(false);
   };
-
-  const handleSend = async () => {
+  const handleSend = () => {
     const fieldErrors: FieldErrors = {
       destination: validateAddress(destination, publicKey) ?? undefined,
       amount: validateAmount(amount, balance) ?? undefined,
       memo: validateMemo(memo) ?? undefined,
     };
     setErrors(fieldErrors);
-
     if (fieldErrors.destination || fieldErrors.amount || fieldErrors.memo) {
       return;
     }
+    // Navigate to the full review screen for the signer handoff flow
+    router.push({
+      pathname: '/review-transaction',
+      params: {
+        destination: destination.trim(),
+        amount: amount.trim(),
+        memo: memo.trim(),
+      },
+    });
+  };
 
+  const handleCancelSign = () => {
+    if (isSigning) return;
+    setShowSigningConfirm(false);
+  };
+
+  const handleConfirmSign = async () => {
     try {
-      setIsLoading(true);
+      setIsSigning(true);
       const secretKey = await getSecretKey();
       if (!secretKey) throw new Error("Secret key not found.");
-
       const result = await sendXlmTransaction(
         secretKey,
         destination.trim(),
         amount.trim(),
         memo.trim(),
       );
-
       refreshWalletData();
+      setShowSigningConfirm(false);
       router.replace({
         pathname: "/payment-success",
         params: {
@@ -145,12 +167,13 @@ export default function SendScreen() {
         },
       });
     } catch (error: any) {
+      setShowSigningConfirm(false);
       Alert.alert(
         "Transaction Failed",
         error.message || "An error occurred while sending.",
       );
     } finally {
-      setIsLoading(false);
+      setIsSigning(false);
     }
   };
 
@@ -163,7 +186,7 @@ export default function SendScreen() {
       >
         <ScreenHeader
           title="Send XLM"
-          subtitle={`Available Balance: ${balance} XLM`}
+          subtitle={`Available Balance: ${formatAmount(balance)} XLM`}
         />
 
         <View style={styles.form}>
@@ -243,7 +266,7 @@ export default function SendScreen() {
             onChangeText={handleAmountChange}
             error={errors.amount}
             keyboardType="decimal-pad"
-            helperText={`Available balance: ${balance} XLM`}
+            helperText={`Available balance: ${formatAmount(balance)} XLM`}
           />
 
           <FormField
@@ -255,10 +278,11 @@ export default function SendScreen() {
           />
         </View>
 
-        <Button
+        <AsyncActionButton
           title="Send Payment"
           onPress={handleSend}
           isLoading={isLoading}
+          loadingText="Sending…"
           style={styles.sendButton}
         />
       </KeyboardAvoidingView>
@@ -275,6 +299,17 @@ export default function SendScreen() {
           onClose={handleScanClose}
         />
       </Modal>
+      <SigningConfirmModal
+        visible={showSigningConfirm}
+        isLoading={isSigning}
+        recipientAddress={destination.trim()}
+        recipientLabel={destinationContact?.isContact ? destinationContact.label : null}
+        amount={amount.trim()}
+        memo={memo.trim()}
+        network={getNetworkLabel()}
+        onConfirm={handleConfirmSign}
+        onCancel={handleCancelSign}
+      />
     </>
   );
 }

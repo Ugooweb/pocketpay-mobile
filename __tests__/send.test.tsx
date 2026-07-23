@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Send Screen – Validation, Submit & QR Scan Behaviour Tests
  *
  * Acceptance criteria covered:
@@ -22,13 +22,27 @@ import { Alert } from 'react-native';
 
 jest.mock('../src/services/stellar');
 jest.mock('../src/store/walletStore');
-jest.mock('../src/store/appStore');
+jest.mock('../src/store/appStore', () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
 jest.mock('pocketpay-sdk', () => ({ validatePublicKey: jest.fn(() => true) }));
 jest.mock('expo-router');
 jest.mock('lucide-react-native', () => ({
   Send: () => null,
   ScanLine: () => null,
   X: () => null,
+  ShieldCheck: () => null,
+  ArrowRight: () => null,
+  AlertTriangle: () => null,
 }));
 
 // expo-camera mock – controllable via module-level variables (same pattern as contacts.scan.test.tsx)
@@ -200,6 +214,8 @@ describe('AC4 – valid form calls sendXlmTransaction', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(mockSendXlmTransaction).toHaveBeenCalledWith(
@@ -215,6 +231,8 @@ describe('AC4 – valid form calls sendXlmTransaction', () => {
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.changeText(getByPlaceholderText('Payment reference'), 'invoice-42');
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(mockSendXlmTransaction).toHaveBeenCalledWith(
@@ -229,6 +247,8 @@ describe('AC4 – valid form calls sendXlmTransaction', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith({
@@ -250,6 +270,8 @@ describe('AC4 – valid form calls sendXlmTransaction', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(refreshWalletData).toHaveBeenCalled();
@@ -269,6 +291,8 @@ describe('AC5 – failure displays error', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith('Transaction Failed', 'tx_bad_seq');
@@ -282,6 +306,8 @@ describe('AC5 – failure displays error', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
@@ -297,6 +323,8 @@ describe('AC5 – failure displays error', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => expect(alertSpy).toHaveBeenCalled());
     expect(mockBack).not.toHaveBeenCalled();
@@ -389,6 +417,8 @@ describe('AC8 – valid scan fills destination field', () => {
     fireEvent.changeText(getByPlaceholderText('G...'), SCANNED_ADDRESS);
     fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
     fireEvent.press(getByText('Send Payment'));
+    await waitFor(() => getByText('Sign & Send'));
+    fireEvent.press(getByText('Sign & Send'));
 
     await waitFor(() => {
       expect(mockSendXlmTransaction).toHaveBeenCalledWith(
@@ -433,5 +463,41 @@ describe('AC10 – cancel scanning', () => {
       expect(queryByText('Point the camera at a Stellar address QR code')).toBeNull();
     });
     expect(getByPlaceholderText('G...').props.value).toBe(VALID_DESTINATION);
+  });
+});
+
+describe('#198 – signing confirmation screen', () => {
+  it('shows the confirmation modal with recipient, amount, memo, and network before signing', async () => {
+    const { getByPlaceholderText, getByText } = render(<SendScreen />);
+
+    fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
+    fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
+    fireEvent.changeText(getByPlaceholderText('Payment reference'), 'invoice-42');
+    fireEvent.press(getByText('Send Payment'));
+
+    await waitFor(() => {
+      expect(getByText('Confirm & Sign')).toBeTruthy();
+    });
+    expect(getByText(VALID_DESTINATION)).toBeTruthy();
+    expect(getByText('10 XLM')).toBeTruthy();
+    expect(getByText('invoice-42')).toBeTruthy();
+    expect(getByText('Testnet')).toBeTruthy();
+    expect(mockSendXlmTransaction).not.toHaveBeenCalled();
+  });
+
+  it('does not sign when the user cancels the confirmation', async () => {
+    const { getByPlaceholderText, getByText, queryByText } = render(<SendScreen />);
+
+    fireEvent.changeText(getByPlaceholderText('G...'), VALID_DESTINATION);
+    fireEvent.changeText(getByPlaceholderText('0.00'), VALID_AMOUNT);
+    fireEvent.press(getByText('Send Payment'));
+
+    await waitFor(() => getByText('Confirm & Sign'));
+    fireEvent.press(getByText('Cancel'));
+
+    await waitFor(() => {
+      expect(queryByText('Confirm & Sign')).toBeNull();
+    });
+    expect(mockSendXlmTransaction).not.toHaveBeenCalled();
   });
 });

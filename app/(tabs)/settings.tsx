@@ -40,6 +40,11 @@ export default function SettingsScreen() {
       if (secret) {
         setSecretKey(secret);
         setShowSecret(true);
+      } else {
+        Alert.alert(
+          'Unable to Access Secret Key',
+          'PocketPay could not read your wallet from secure storage. This can happen if your device is locked, restarted, or restricts keychain access. Try again, or unlock your device and retry.'
+        );
       }
     } else {
       setShowSecret(false);
@@ -84,18 +89,21 @@ export default function SettingsScreen() {
   };
 
   return (
-    <><ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferences</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Shield color={COLORS.primary} size={24} />
-              <View style={styles.rowTextGroup}>
-                <Text style={styles.rowText}>App Lock</Text>
-                <Text style={styles.rowHelper}>
-                  Require biometrics or passcode to open
-                </Text>
+    <>
+      <ScrollView style={styles.container}>
+        {/* Preferences */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preferences</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.rowLeft}>
+                <Shield color={colors.primary} size={24} />
+                <View style={styles.rowTextGroup}>
+                  <Text style={styles.rowText}>App Lock</Text>
+                  <Text style={styles.rowHelper}>
+                    Require biometrics or passcode to open
+                  </Text>
+                </View>
               </View>
               <Switch
                 value={isLockEnabled}
@@ -144,9 +152,15 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>About</Text>
           <View style={styles.card}>
             <View style={styles.row}>
-              <Text style={styles.aboutLabel}>Version</Text>
-              <Text style={styles.rowValue}>1.0.0</Text>
+              <Text style={styles.aboutLabel}>App Name</Text>
+              <Text style={styles.rowValue}>{appName}</Text>
             </View>
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.aboutLabel}>Version</Text>
+              <Text style={styles.rowValue}>{appVersion}</Text>
+            </View>
+            <View style={styles.divider} />
             <View style={[styles.row, styles.rowLast]}>
               <Text style={styles.aboutLabel}>Network</Text>
               <Text style={styles.rowValue}>Testnet</Text>
@@ -154,64 +168,23 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-      {__DEV__ && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Development</Text>
-          <View style={styles.card}>
-            <Button 
-              title="Export Diagnostics" 
-              variant="outline" 
-              onPress={handleExportDiagnostics}
-              style={[styles.menuButton, { borderBottomWidth: 0 }]}
-            />
-          </View>
+        <View style={[styles.section, { marginTop: SIZES.xl }]}>
+          <Button
+            title="Sign Out & Clear Wallet"
+            variant="danger"
+            onPress={handleSignOut}
+          />
         </View>
-      )}
+      </ScrollView>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.card}>
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>App Name</Text>
-              <Text style={styles.aboutValue}>{appName}</Text>
-            </View>
-          </View>
-          <View style={styles.aboutDivider} />
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>Version</Text>
-              <Text style={styles.aboutValue}>{appVersion}</Text>
-            </View>
-          </View>
-          <View style={styles.aboutDivider} />
-          <View style={styles.aboutRow}>
-            <Info color={COLORS.textSecondary} size={20} />
-            <View style={styles.aboutTextGroup}>
-              <Text style={styles.aboutLabel}>Network</Text>
-              <Text style={styles.aboutValue}>Testnet</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      <View style={[styles.section, { marginTop: SIZES.xl }]}>
-        <Button
-          title="Sign Out & Clear Wallet"
-          variant="danger"
-          onPress={handleSignOut}
-        />
-      </View>
-    </ScrollView>
       <WalletResetConfirmModal
         visible={showResetModal}
         isLoading={isResetting}
         onConfirm={handleResetConfirm}
         onCancel={() => setShowResetModal(false)}
       />
-    </>);
+    </>
+  );
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({

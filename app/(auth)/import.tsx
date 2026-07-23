@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button } from '../../src/components/Button';
+import { AsyncActionButton } from '../../src/components/AsyncActionButton';
 import { FormField } from '../../src/components/FormField';
 import { SIZES, RADIUS, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
@@ -17,7 +17,6 @@ export default function ImportWalletScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { setWallet } = useWalletStore();
   const [secretKey, setSecretKey] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -42,21 +41,17 @@ export default function ImportWalletScreen() {
     }
 
     try {
-      setIsLoading(true);
       const { publicKey } = await importWallet(trimmedKey);
 
       const saved = await setWallet(publicKey, trimmedKey);
       if (!saved) {
         setError('Failed to persist wallet. Please try again.');
-        setIsLoading(false);
         return;
       }
 
-      setIsLoading(false);
       setIsSuccess(true);
     } catch {
       setError('Invalid secret key. It may be malformed or from the wrong network.');
-      setIsLoading(false);
     }
   };
 
@@ -77,7 +72,7 @@ export default function ImportWalletScreen() {
             Your Testnet wallet has been restored. You can now send and receive test XLM.
           </Text>
         </View>
-        <Button title="Go to Wallet" onPress={handleGoToWallet} />
+        <AsyncActionButton title="Go to Wallet" onPress={handleGoToWallet} />
       </View>
     );
   }
@@ -126,10 +121,10 @@ export default function ImportWalletScreen() {
         />
       </View>
 
-      <Button
+      <AsyncActionButton
         title="Import Wallet"
         onPress={handleImport}
-        isLoading={isLoading}
+        loadingText="Importing…"
       />
     </KeyboardAvoidingView>
   );

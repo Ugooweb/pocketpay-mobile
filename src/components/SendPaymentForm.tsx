@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { useDirtyForm } from '../hooks/useDirtyForm';
 import { DirtyFormConfirm } from './DirtyFormConfirm';
 
@@ -11,7 +11,7 @@ interface SendPaymentFormData {
 }
 
 export const SendPaymentForm: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [formData, setFormData] = useState<SendPaymentFormData>({
     recipient: '',
     amount: '',
@@ -34,12 +34,12 @@ export const SendPaymentForm: React.FC = () => {
     message: 'You have unsaved changes in the payment form. Are you sure you want to leave?',
     onConfirmLeave: () => {
       resetDirty();
-      navigate(-1);
+      router.back();
     },
   });
 
   const handleInputChange = (field: keyof SendPaymentFormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: any
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -47,7 +47,7 @@ export const SendPaymentForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -55,7 +55,7 @@ export const SendPaymentForm: React.FC = () => {
       console.log('Submitting payment:', formData);
       // On success, reset dirty state and navigate
       resetDirty();
-      navigate('/transactions');
+      router.push('/(tabs)');
     } catch (error) {
       console.error('Payment failed:', error);
     } finally {
@@ -68,7 +68,7 @@ export const SendPaymentForm: React.FC = () => {
       // The hook will handle showing the confirmation
       return;
     }
-    navigate(-1);
+    router.back();
   };
 
   return (

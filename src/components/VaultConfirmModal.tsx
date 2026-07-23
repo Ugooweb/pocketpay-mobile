@@ -80,7 +80,7 @@ export const VaultConfirmModal: React.FC<VaultConfirmModalProps> = ({
       accentColor: colors.secondary,
       actionLabel: 'Confirm Lock',
       description:
-        'You are about to lock funds in the vault for a fixed period. Locked funds cannot be withdrawn until the unlock time is reached.',
+        'You are about to set aside funds for 30 days. During this time the locked amount stays safely in your vault but cannot be withdrawn until the unlock date.',
     },
   };
 

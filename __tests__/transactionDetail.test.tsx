@@ -19,6 +19,18 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn(),
 }));
 jest.mock('../src/store/walletStore');
+jest.mock('../src/store/appStore', () => {
+  const mockUseAppStore = jest.fn((selector) => {
+    const mockState = {
+      contacts: [],
+    };
+    return selector ? selector(mockState) : mockState;
+  });
+  return {
+    normalizePublicKey: (key: string) => key.trim().toUpperCase(),
+    useAppStore: mockUseAppStore,
+  };
+});
 jest.mock('expo-router', () => ({
   useRouter: () => mockUseRouterFn(),
   useLocalSearchParams: () => mockUseLocalSearchParamsFn(),
@@ -71,7 +83,7 @@ describe('Transaction Detail Screen', () => {
   it('renders transaction details correctly', () => {
     const { getByTestId, getByText } = render(<TransactionDetailScreen />);
 
-    expect(getByTestId('detail-amount').props.children).toContain('50.0000000 XLM');
+    expect(getByTestId('detail-amount').props.children).toContain('50 XLM');
     expect(getByText('GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H')).toBeTruthy();
     expect(getByText('GDNOEY2L6EGCMAYNZWJN6K3K6TJJKAKNQJQJWY5HXLFY3LJQY7JJ6NVD')).toBeTruthy();
     expect(getByText('abc123def456abc123def456abc123def456abc123def456abc123def456abcd')).toBeTruthy();

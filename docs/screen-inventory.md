@@ -11,10 +11,18 @@ This document provides a quick map of the main screens and routes in the Stellar
 
 ## `app/send.tsx`
 *   **Route Name:** `/send`
-*   **Purpose:** Allows the user to send XLM to a destination address.
-*   **Key Components:** `Input`, `Button`, `KeyboardAvoidingView`
-*   **State Dependencies:** `useWalletStore` (getSecretKey, refreshWalletData, balance)
+*   **Purpose:** Allows the user to enter payment details (destination, amount, memo) and navigate to the transaction review screen.
+*   **Key Components:** `FormField`, `Button`, `KeyboardAvoidingView`, `QrScanner`
+*   **State Dependencies:** `useWalletStore` (publicKey, balance)
+*   **Related SDK Calls:** N/A (validation only; signing happens in review screen)
+
+## `app/review-transaction.tsx`
+*   **Route Name:** `/review-transaction`
+*   **Purpose:** Full-screen transaction review before signing. Displays transaction details, signer info, and handles the signing handoff lifecycle (review → signing → submitting → completed/failed).
+*   **Key Components:** `ScreenHeader`, `Button`
+*   **State Dependencies:** `useWalletStore` (publicKey, getSecretKey, refreshWalletData), `useSignerStore` (phase, review, result, error), `useAppStore` (contacts for label resolution)
 *   **Related SDK Calls:** `sendXlmTransaction` (from `src/services/stellar`)
+*   **Design:** Part of the signer handoff architecture for future external wallet support. See `docs/signer-handoff-design.md`.
 
 ## `app/receive.tsx`
 *   **Route Name:** `/receive`

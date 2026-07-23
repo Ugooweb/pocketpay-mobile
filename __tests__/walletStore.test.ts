@@ -14,6 +14,12 @@ jest.mock('@stellar/stellar-sdk', () => ({
   },
 }));
 
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(async () => {}),
+  removeItem: jest.fn(async () => {}),
+}));
+
 import * as SecureStore from 'expo-secure-store';
 import { useWalletStore } from '../src/store/walletStore';
 
@@ -99,6 +105,18 @@ describe('walletStore secure storage handling', () => {
     }
   );
 
+  it('does not delete credentials if secure storage read throws an error', async () => {
+    mockedSecureStore.getItemAsync.mockRejectedValueOnce(new Error('Device locked or permission denied'));
+
+    const restored = await useWalletStore.getState().loadWalletFromStorage();
+
+    expect(restored).toBe(false);
+    expect(useWalletStore.getState().publicKey).toBeNull();
+    expect(useWalletStore.getState().error).toBe('Failed to restore wallet securely');
+    expect(mockedSecureStore.deleteItemAsync).not.toLocaleString(); // not called
+    expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
+  });
+
   it('does not clear active wallet state when secure storage deletion fails', async () => {
     useWalletStore.setState({ publicKey: 'GPUBLICKEY', balance: '10.0000000' });
     mockedSecureStore.deleteItemAsync.mockRejectedValueOnce(new Error('delete failed'));
@@ -109,6 +127,27 @@ describe('walletStore secure storage handling', () => {
     expect(useWalletStore.getState().publicKey).toBe('GPUBLICKEY');
     expect(useWalletStore.getState().balance).toBe('10.0000000');
     expect(useWalletStore.getState().error).toBe('Failed to clear wallet securely');
+  });
+
+  it('sets a distinguishable error when getSecretKey read fails, without leaking the secret', async () => {
+    mockedSecureStore.getItemAsync.mockRejectedValueOnce(new Error('Keystore unavailable'));
+
+    const key = await useWalletStore.getState().getSecretKey();
+
+    expect(key).toBeNull();
+    expect(useWalletStore.getState().error).toBe('Failed to read wallet securely');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to read wallet securely');
+    expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toContain('Keystore unavailable');
+  });
+
+  it('clears any prior error when getSecretKey succeeds', async () => {
+    useWalletStore.setState({ error: 'Failed to read wallet securely' });
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce('SVALIDSECRET');
+
+    const key = await useWalletStore.getState().getSecretKey();
+
+    expect(key).toBe('SVALIDSECRET');
+    expect(useWalletStore.getState().error).toBeNull();
   });
 });
 

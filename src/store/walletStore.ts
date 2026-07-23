@@ -1,14 +1,22 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { fetchXlmBalance, fetchTransactionsPage, fundWithFriendbot, PaymentRecord } from '../services/stellar';
 
 const WALLET_KEY = 'pocketpay_wallet_secret';
+// Tracks whether the post-creation backup reminder has been acknowledged.
+// Persisted (not just in-memory) so the reminder survives an app kill that
+// happens after wallet creation but before the user dismisses the modal —
+// otherwise the in-memory `showBackupReminder` flag resets to false on the
+// next launch and the user never sees the warning again.
+const BACKUP_ACK_KEY = '@pocketpay_backup_acknowledged';
 const DEFAULT_BALANCE = '0.0000000';
 const TX_PAGE_SIZE = 20;
 const PERSIST_WALLET_ERROR = 'Failed to persist wallet securely';
 const RESTORE_WALLET_ERROR = 'Failed to restore wallet securely';
 const CLEAR_WALLET_ERROR = 'Failed to clear wallet securely';
+const READ_WALLET_ERROR = 'Failed to read wallet securely';
 
 // Transaction records from the Stellar Horizon API – use a flexible type
 // until a proper typed SDK wrapper is available.
@@ -18,10 +26,12 @@ interface WalletState {
   publicKey: string | null;
   balance: string;
   transactions: TransactionRecord[];
+  lastRefreshed: number | null;
   isLoading: boolean;
   isFunding: boolean;
   fundError: string | null;
   error: string | null;
+  showBackupReminder: boolean;
 
   // Pagination
   isLoadingMore: boolean;
@@ -37,12 +47,17 @@ interface WalletState {
   clearWallet: () => Promise<boolean>;
   getSecretKey: () => Promise<string | null>;
   fundWallet: () => Promise<void>;
+  /** Marks the backup reminder as pending (shown) and persists that state. */
+  markBackupPending: () => Promise<void>;
+  /** Marks the backup reminder as acknowledged and persists that state. */
+  acknowledgeBackupReminder: () => Promise<void>;
 }
 
 const resetWalletState = () => ({
   publicKey: null,
   balance: DEFAULT_BALANCE,
   transactions: [],
+  lastRefreshed: null,
   isLoadingMore: false,
   hasMoreTransactions: false,
   nextCursor: null,
@@ -73,7 +88,7 @@ const parseStoredSecret = (storedValue: string): string | null => {
   return trimmedValue;
 };
 
-const clearStoredWalletValue = async () => {
+const clearStoredSecrets = async () => {
   try {
     await SecureStore.deleteItemAsync(WALLET_KEY);
   } catch {
@@ -85,6 +100,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   publicKey: null,
   balance: DEFAULT_BALANCE,
   transactions: [],
+  lastRefreshed: null,
   isLoading: false,
   isFunding: false,
   fundError: null,
@@ -92,6 +108,25 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   isLoadingMore: false,
   hasMoreTransactions: false,
   nextCursor: null,
+  showBackupReminder: false,
+
+  markBackupPending: async () => {
+    set({ showBackupReminder: true });
+    try {
+      await AsyncStorage.setItem(BACKUP_ACK_KEY, 'false');
+    } catch {
+      console.warn('Failed to persist backup reminder state');
+    }
+  },
+
+  acknowledgeBackupReminder: async () => {
+    set({ showBackupReminder: false });
+    try {
+      await AsyncStorage.setItem(BACKUP_ACK_KEY, 'true');
+    } catch {
+      console.warn('Failed to persist backup reminder state');
+    }
+  },
 
   setWallet: async (publicKey: string, secretKey: string) => {
     try {
@@ -106,26 +141,44 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
 
   loadWalletFromStorage: async () => {
+    let storedValue: string | null = null;
     try {
-      const storedValue = await SecureStore.getItemAsync(WALLET_KEY);
-      if (storedValue === null) {
-        set({ ...resetWalletState(), error: null });
-        return false;
-      }
+      storedValue = await SecureStore.getItemAsync(WALLET_KEY);
+    } catch {
+      console.error(RESTORE_WALLET_ERROR);
+      set({ ...resetWalletState(), error: RESTORE_WALLET_ERROR });
+      return false;
+    }
 
-      const secretKey = parseStoredSecret(storedValue);
-      if (!secretKey) {
-        await clearStoredWalletValue();
-        set({ ...resetWalletState(), error: RESTORE_WALLET_ERROR });
-        return false;
-      }
+    if (storedValue === null) {
+      set({ ...resetWalletState(), error: null });
+      return false;
+    }
 
+    const secretKey = parseStoredSecret(storedValue);
+    if (!secretKey) {
+      await clearStoredSecrets();
+      set({ ...resetWalletState(), error: RESTORE_WALLET_ERROR });
+      return false;
+    }
+
+    try {
       const keypair = StellarSdk.Keypair.fromSecret(secretKey);
-      set({ publicKey: keypair.publicKey(), error: null });
+
+      // Re-show the backup reminder if it was left pending from a previous
+      // session (e.g. the app was killed before the user acknowledged it).
+      let showBackupReminder = false;
+      try {
+        showBackupReminder = (await AsyncStorage.getItem(BACKUP_ACK_KEY)) === 'false';
+      } catch {
+        // Non-critical: default to not re-showing the reminder on read failure.
+      }
+
+      set({ publicKey: keypair.publicKey(), error: null, showBackupReminder });
       return true;
     } catch {
       console.error(RESTORE_WALLET_ERROR);
-      await clearStoredWalletValue();
+      await clearStoredSecrets();
       set({ ...resetWalletState(), error: RESTORE_WALLET_ERROR });
       return false;
     }
@@ -146,6 +199,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         transactions: page.records,
         nextCursor: page.nextCursor,
         hasMoreTransactions: page.hasMore,
+        lastRefreshed: Date.now(),
         isLoading: false,
       });
     } catch (err: any) {
@@ -185,7 +239,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   clearWallet: async () => {
     try {
       await SecureStore.deleteItemAsync(WALLET_KEY);
-      set({ ...resetWalletState(), error: null });
+      set({ ...resetWalletState(), showBackupReminder: false, error: null });
+      try {
+        await AsyncStorage.removeItem(BACKUP_ACK_KEY);
+      } catch {
+        // Non-critical: a stale flag only affects the reminder's re-show behavior.
+      }
       return true;
     } catch {
       console.error(CLEAR_WALLET_ERROR);
@@ -196,9 +255,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   getSecretKey: async () => {
     try {
-      return await SecureStore.getItemAsync(WALLET_KEY);
+      const value = await SecureStore.getItemAsync(WALLET_KEY);
+      if (value !== null) set({ error: null });
+      return value;
     } catch {
-      console.error('Failed to read wallet securely');
+      console.error(READ_WALLET_ERROR);
+      set({ error: READ_WALLET_ERROR });
       return null;
     }
   },
