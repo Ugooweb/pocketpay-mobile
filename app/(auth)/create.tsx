@@ -13,7 +13,7 @@ export default function CreateWalletScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { setWallet, setShowBackupReminder } = useWalletStore();
+  const { setWallet, markBackupPending } = useWalletStore();
   const [keypair, setKeypair] = useState<{ publicKey: string; secretKey: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -46,7 +46,7 @@ export default function CreateWalletScreen() {
               Alert.alert('Wallet Not Saved', 'Failed to persist wallet securely. Please try again.');
               return;
             }
-            setShowBackupReminder(true);
+            await markBackupPending();
             setIsSuccess(true);
           }
         }

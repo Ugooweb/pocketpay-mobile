@@ -39,7 +39,7 @@ export default function HomeScreen() {
     refreshWalletData,
     fundWallet,
     showBackupReminder,
-    setShowBackupReminder,
+    acknowledgeBackupReminder,
   } = useWalletStore();
 
   const { networkErrorType, message } = useNetworkStatus(error);
@@ -137,7 +137,7 @@ export default function HomeScreen() {
       </ScrollView>
       <BackupReminderModal
         visible={showBackupReminder}
-        onAcknowledge={() => setShowBackupReminder(false)}
+        onAcknowledge={() => acknowledgeBackupReminder()}
       />
     </>
   );

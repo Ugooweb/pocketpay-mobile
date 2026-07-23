@@ -28,6 +28,12 @@ jest.mock('@stellar/stellar-sdk', () => ({
   Networks: { TESTNET: 'Test SDF Network ; September 2015' },
 }));
 
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(async () => null),
+  setItem: jest.fn(async () => {}),
+  removeItem: jest.fn(async () => {}),
+}));
+
 import { fetchTransactionsPage, fetchXlmBalance } from '../src/services/stellar';
 import { useWalletStore } from '../src/store/walletStore';
 

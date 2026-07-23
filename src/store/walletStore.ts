@@ -1,9 +1,16 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { fetchXlmBalance, fetchTransactionsPage, fundWithFriendbot, PaymentRecord } from '../services/stellar';
 
 const WALLET_KEY = 'pocketpay_wallet_secret';
+// Tracks whether the post-creation backup reminder has been acknowledged.
+// Persisted (not just in-memory) so the reminder survives an app kill that
+// happens after wallet creation but before the user dismisses the modal —
+// otherwise the in-memory `showBackupReminder` flag resets to false on the
+// next launch and the user never sees the warning again.
+const BACKUP_ACK_KEY = '@pocketpay_backup_acknowledged';
 const DEFAULT_BALANCE = '0.0000000';
 const TX_PAGE_SIZE = 20;
 const PERSIST_WALLET_ERROR = 'Failed to persist wallet securely';
@@ -40,7 +47,10 @@ interface WalletState {
   clearWallet: () => Promise<boolean>;
   getSecretKey: () => Promise<string | null>;
   fundWallet: () => Promise<void>;
-  setShowBackupReminder: (show: boolean) => void;
+  /** Marks the backup reminder as pending (shown) and persists that state. */
+  markBackupPending: () => Promise<void>;
+  /** Marks the backup reminder as acknowledged and persists that state. */
+  acknowledgeBackupReminder: () => Promise<void>;
 }
 
 const resetWalletState = () => ({
@@ -100,7 +110,23 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   nextCursor: null,
   showBackupReminder: false,
 
-  setShowBackupReminder: (show: boolean) => set({ showBackupReminder: show }),
+  markBackupPending: async () => {
+    set({ showBackupReminder: true });
+    try {
+      await AsyncStorage.setItem(BACKUP_ACK_KEY, 'false');
+    } catch {
+      console.warn('Failed to persist backup reminder state');
+    }
+  },
+
+  acknowledgeBackupReminder: async () => {
+    set({ showBackupReminder: false });
+    try {
+      await AsyncStorage.setItem(BACKUP_ACK_KEY, 'true');
+    } catch {
+      console.warn('Failed to persist backup reminder state');
+    }
+  },
 
   setWallet: async (publicKey: string, secretKey: string) => {
     try {
@@ -138,7 +164,17 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     try {
       const keypair = StellarSdk.Keypair.fromSecret(secretKey);
-      set({ publicKey: keypair.publicKey(), error: null });
+
+      // Re-show the backup reminder if it was left pending from a previous
+      // session (e.g. the app was killed before the user acknowledged it).
+      let showBackupReminder = false;
+      try {
+        showBackupReminder = (await AsyncStorage.getItem(BACKUP_ACK_KEY)) === 'false';
+      } catch {
+        // Non-critical: default to not re-showing the reminder on read failure.
+      }
+
+      set({ publicKey: keypair.publicKey(), error: null, showBackupReminder });
       return true;
     } catch {
       console.error(RESTORE_WALLET_ERROR);
@@ -203,7 +239,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   clearWallet: async () => {
     try {
       await SecureStore.deleteItemAsync(WALLET_KEY);
-      set({ ...resetWalletState(), error: null });
+      set({ ...resetWalletState(), showBackupReminder: false, error: null });
+      try {
+        await AsyncStorage.removeItem(BACKUP_ACK_KEY);
+      } catch {
+        // Non-critical: a stale flag only affects the reminder's re-show behavior.
+      }
       return true;
     } catch {
       console.error(CLEAR_WALLET_ERROR);
