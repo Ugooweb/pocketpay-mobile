@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { ErrorBoundaryFallback } from './ErrorBoundaryFallback';
+import { reportError } from '../utils/errorReporting';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -26,9 +27,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    if (__DEV__) {
-      console.error('[Global ErrorBoundary caught an unhandled exception]:', error, errorInfo);
-    }
+    reportError(error, {
+      source: 'ErrorBoundary',
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   public resetError = (): void => {

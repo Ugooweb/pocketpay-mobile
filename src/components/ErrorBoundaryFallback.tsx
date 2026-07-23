@@ -25,7 +25,7 @@ export const ErrorBoundaryFallback: React.FC<ErrorBoundaryFallbackProps> = ({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [showDetails, setShowDetails] = useState(false);
 
-  const errorMessage = error?.message || 'Error desconocido';
+  const errorMessage = error?.message || 'Unknown error';
   const errorStack = error?.stack || '';
 
   return (
@@ -43,18 +43,18 @@ export const ErrorBoundaryFallback: React.FC<ErrorBoundaryFallbackProps> = ({
           </View>
 
           {/* User Facing Copy */}
-          <Text style={styles.title}>Algo salió mal</Text>
+          <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.subtitle}>
-            Ha ocurrido un problema inesperado en la aplicación. No te preocupes, tus datos y fondos en la red están seguros.
+            An unexpected problem occurred in the app. Don't worry — your data and funds on the network are safe.
           </Text>
 
           {/* Action Button */}
           <View style={styles.actionContainer}>
             <Button
-              title="Reintentar"
+              title="Try Again"
               onPress={onReset}
               variant="primary"
-              accessibilityLabel="Reintentar y restablecer la aplicación"
+              accessibilityLabel="Try again and reset the app"
               style={styles.retryButton}
             />
           </View>
@@ -67,11 +67,11 @@ export const ErrorBoundaryFallback: React.FC<ErrorBoundaryFallbackProps> = ({
                 onPress={() => setShowDetails((prev) => !prev)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel="Mostrar u ocultar detalles técnicos de depuración"
+                accessibilityLabel="Show or hide technical debug details"
               >
                 <View style={styles.devHeaderLeft}>
                   <Bug size={16} color={colors.warning} style={styles.bugIcon} />
-                  <Text style={styles.devHeaderText}>Detalles de depuración (Dev Only)</Text>
+                  <Text style={styles.devHeaderText}>Debug Details (Dev Only)</Text>
                 </View>
                 {showDetails ? (
                   <ChevronUp size={18} color={colors.textMuted} />

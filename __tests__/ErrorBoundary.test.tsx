@@ -15,6 +15,7 @@ jest.mock('lucide-react-native', () => ({
 }));
 
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import * as errorReporting from '../src/utils/errorReporting';
 
 // Suppress expected console.error logs during error boundary test executions
 const originalConsoleError = console.error;
@@ -73,15 +74,15 @@ describe('ErrorBoundary', () => {
     expect(queryByText('Normal Child Component')).toBeNull();
 
     // Friendly error screen titles and messages should be present
-    expect(getByText('Algo salió mal')).toBeTruthy();
+    expect(getByText('Something went wrong')).toBeTruthy();
     expect(
       getByText(
-        'Ha ocurrido un problema inesperado en la aplicación. No te preocupes, tus datos y fondos en la red están seguros.'
+        "An unexpected problem occurred in the app. Don't worry — your data and funds on the network are safe."
       )
     ).toBeTruthy();
 
     // Recovery action button should exist
-    expect(getByText('Reintentar')).toBeTruthy();
+    expect(getByText('Try Again')).toBeTruthy();
   });
 
   it('triggers recovery action and resets error state on "Reintentar" button press', () => {
@@ -91,14 +92,14 @@ describe('ErrorBoundary', () => {
     );
 
     // Verify fallback is initially displayed
-    expect(getByText('Algo salió mal')).toBeTruthy();
+    expect(getByText('Something went wrong')).toBeTruthy();
 
     // Press retry button
-    fireEvent.press(getByText('Reintentar'));
+    fireEvent.press(getByText('Try Again'));
 
     // Verify onReset callback was called and child recovered
     expect(onResetSpy).toHaveBeenCalledTimes(1);
-    expect(queryByText('Algo salió mal')).toBeNull();
+    expect(queryByText('Something went wrong')).toBeNull();
     expect(getByText('Recovered Normal Content')).toBeTruthy();
   });
 
@@ -131,11 +132,34 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(getByText('Algo salió mal')).toBeTruthy();
-      expect(queryByText('Detalles de depuración (Dev Only)')).toBeNull();
+      expect(getByText('Something went wrong')).toBeTruthy();
+      expect(queryByText('Debug Details (Dev Only)')).toBeNull();
       expect(queryByText('Simulated runtime error')).toBeNull();
     } finally {
       global.__DEV__ = originalDev;
+    }
+  });
+
+  it('reports the error even in production (__DEV__ = false), not just in dev', () => {
+    const originalDev = global.__DEV__;
+    const reportErrorSpy = jest.spyOn(errorReporting, 'reportError').mockImplementation(() => {});
+
+    try {
+      global.__DEV__ = false;
+
+      render(
+        <ErrorBoundary>
+          <ProblemChild shouldThrow={true} />
+        </ErrorBoundary>
+      );
+
+      expect(reportErrorSpy).toHaveBeenCalledTimes(1);
+      const [reportedError, context] = reportErrorSpy.mock.calls[0];
+      expect(reportedError.message).toBe('Simulated runtime error');
+      expect(context.source).toBe('ErrorBoundary');
+    } finally {
+      global.__DEV__ = originalDev;
+      reportErrorSpy.mockRestore();
     }
   });
 
@@ -151,7 +175,7 @@ describe('ErrorBoundary', () => {
       );
 
       // Dev section header should be visible
-      const devHeader = getByText('Detalles de depuración (Dev Only)');
+      const devHeader = getByText('Debug Details (Dev Only)');
       expect(devHeader).toBeTruthy();
 
       // Error message should initially be collapsed

@@ -1,6 +1,7 @@
 import '../shim'; // MUST BE FIRST (See docs/polyfills.md for details)
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
+import { installGlobalErrorHandlers } from '../src/utils/globalErrorHandler';
 import { StatusBar } from 'expo-status-bar';
 import { useWalletStore } from '../src/store/walletStore';
 import { useAppStore } from '../src/store/appStore';
@@ -11,6 +12,8 @@ import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { Button } from '../src/components/Button';
 import { ShieldAlert } from 'lucide-react-native';
 import { SIZES, RADIUS } from '../src/constants/theme';
+
+installGlobalErrorHandlers(); // MUST run before anything else can throw
 
 export default function RootLayout() {
   const { loadWalletFromStorage, publicKey, error, clearWallet } = useWalletStore();
