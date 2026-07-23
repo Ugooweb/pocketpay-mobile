@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -6,17 +6,30 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useWalletStore, TransactionRecord } from '../../src/store/walletStore';
-import { SIZES, ThemeColors } from '../../src/constants/theme';
+import { RADIUS, SIZES, ThemeColors } from '../../src/constants/theme';
 import { useTheme } from '../../src/hooks/useTheme';
 import { TransactionListItem } from '../../src/components/TransactionListItem';
 import { NetworkStatusBanner } from '../../src/components/NetworkStatusBanner';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useNetworkStatus } from '../../src/hooks/useNetworkStatus';
 import { groupTransactionsByDate } from '../../src/utils/transactions';
+
+const FILTERS = [
+  { label: 'All', value: 'all' },
+  { label: 'Sent', value: 'sent' },
+  { label: 'Received', value: 'received' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Vault', value: 'vault' },
+] as const;
+
+type FilterType = (typeof FILTERS)[number]['value'];
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
@@ -100,9 +113,31 @@ export default function HistoryScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [filter, setFilter] = useState<FilterType>('all');
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(tx => {
+      if (filter === 'all') return true;
+      
+      const isSent = tx.from === publicKey;
+      const isReceived = tx.to === publicKey || tx.into === publicKey;
+      const isFailed = tx.transaction_successful === false;
+      const isPending = tx.is_pending === true; 
+      const isVault = tx.type === 'invoke_host_function' || tx.is_vault === true;
+
+      if (filter === 'sent') return isSent && !isVault;
+      if (filter === 'received') return isReceived && !isVault;
+      if (filter === 'failed') return isFailed;
+      if (filter === 'pending') return isPending;
+      if (filter === 'vault') return isVault;
+
+      return true;
+    });
+  }, [transactions, filter, publicKey]);
+
   const groupedTransactions = useMemo(
-    () => groupTransactionsByDate(transactions),
-    [transactions]
+    () => groupTransactionsByDate(filteredTransactions),
+    [filteredTransactions]
   );
 
   const renderItem = useCallback(
@@ -174,12 +209,36 @@ export default function HistoryScreen() {
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.2}
         ListHeaderComponent={
-          <NetworkStatusBanner
-            networkErrorType={networkErrorType}
-            message={message}
-            onRetry={refreshWalletData}
-            isRetrying={isLoading}
-          />
+          <>
+            <NetworkStatusBanner
+              networkErrorType={networkErrorType}
+              message={message}
+              onRetry={refreshWalletData}
+              isRetrying={isLoading}
+            />
+            <View style={styles.filterContainer}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={styles.filterScroll}
+              >
+                {FILTERS.map((f) => {
+                  const isActive = filter === f.value;
+                  return (
+                    <TouchableOpacity
+                      key={f.value}
+                      style={[styles.filterChip, isActive && styles.filterChipActive]}
+                      onPress={() => setFilter(f.value)}
+                    >
+                      <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                        {f.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </>
         }
         ListFooterComponent={renderFooter}
         ListEmptyComponent={
@@ -243,5 +302,36 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+  },
+  filterContainer: {
+    paddingVertical: SIZES.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: SIZES.md,
+  },
+  filterScroll: {
+    paddingHorizontal: SIZES.lg,
+    gap: SIZES.xs,
+  },
+  filterChip: {
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: SIZES.xs,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: colors.background,
   },
 });
