@@ -1,47 +1,75 @@
-# Mobile Wallet Security FAQ
+# Wallet Security FAQ
 
-This document outlines the security architecture, local storage mechanics, key handling, reset behaviors, and user responsibilities for the mobile wallet application.
+This FAQ explains how the PocketPay mobile wallet handles local storage, secret keys, reset behavior, and what remains the user's responsibility.
 
----
+## Where is wallet data stored?
 
-## 1. Storage & Key Handling
+Wallet data is stored on the device.
 
-### How are private keys and secret phrases stored on the device?
-Sensitive data (such as secret recovery phrases and private keys) is never stored in plaintext or standard local storage. The application relies on secure device hardware primitives (such as iOS Keychain and Android Keystore via SecureStore) to encrypt and isolate sensitive data at rest.
+Sensitive values such as secret keys are kept in secure device storage when possible, using platform protections like iOS Keychain and Android Keystore through `SecureStore`.
 
-### Are my private keys ever transmitted to external servers?
-No. All cryptographic operations (transaction signing, message verification) occur strictly on the client device. Private keys and secret recovery phrases never leave your device.
+Non-sensitive app data may use local storage mechanisms such as `AsyncStorage` when appropriate.
 
----
+## Does the app send my secret key to a server?
 
-## 2. Security Guarantees & Assumptions
+No.
 
-### What does the app guarantee?
-* **Local Isolation:** Keys are stored securely on the local device.
-* **No Remote Key Backup:** We do not collect, back up, or host your private keys on any central server.
-* **Client-Side Signing:** All transactions are signed locally before broadcast.
+Secret keys are used locally on the device to sign transactions. They should not be transmitted to a backend service as part of normal wallet operation.
 
-### What are the user's responsibilities?
-* **Backup Management:** You are solely responsible for writing down and securely storing your secret recovery phrase offline.
-* **Device Security:** Maintaining device integrity (e.g., strong passcode, biometrics, avoiding rooted or jailbroken devices).
-* **Malware Protection:** Ensuring the mobile OS is up to date to prevent overlay or screen-recording attacks.
+## What security guarantees does the app provide?
 
----
+The app is designed to support a non-custodial wallet model:
 
-## 3. Account Reset & Recovery
+- Secret keys are intended to stay on your device.
+- Signing should happen locally.
+- The app should not be treated as a backup service for your wallet secrets.
 
-### What happens when I reset or uninstall the app?
-Resetting or uninstalling the app permanently deletes locally cached data, including encrypted keystores.
+These are design goals and implementation assumptions, not a promise that your device is safe from all threats.
 
-### Can support help me recover my account if I lose my secret phrase?
-No. Because we operate under a non-custodial model and do not store your keys, loss of your secret recovery phrase results in permanent loss of access to your funds. Always keep an offline backup.
+## What does the app not guarantee?
 
----
+The app does not guarantee:
 
-## 4. Troubleshooting & Vulnerability Reporting
+- Protection if your device is compromised
+- Protection if someone else can unlock your phone
+- Recovery of lost secret keys or recovery phrases
+- Safety on rooted, jailbroken, or otherwise untrusted devices
 
-### What should I do if I suspect my device was compromised?
-Immediately import your secret recovery phrase into a secure device or wallet and transfer all funds to a new, uncompromised wallet address.
+## What happens if I reset or uninstall the app?
 
-### How do I report a security vulnerability?
-If you discover a security flaw in the repository, please refrain from opening a public issue. Follow our responsible disclosure guidelines outlined in `SECURITY.md` or contact the maintainers directly.
+Resetting or uninstalling the app removes locally stored app data from the device.
+
+That means:
+
+- Cached wallet data can be lost
+- Stored secrets may be removed from the device
+- The app may need to be set up again after reinstalling
+
+This does not remove anything from the blockchain itself. Your wallet account still exists on chain.
+
+## Can I recover my wallet if I lose my secret phrase?
+
+Usually no.
+
+If the app or wallet setup depends on a secret phrase or private key and you lose it, the wallet cannot be restored by the app or by the maintainers. Keep an offline backup in a safe place.
+
+## What is the user's responsibility?
+
+You are responsible for:
+
+- Backing up your secret phrase or private key
+- Keeping that backup offline and private
+- Securing your phone with a passcode, biometrics, or both
+- Avoiding untrusted devices and suspicious apps
+- Keeping your operating system updated
+
+## What should I do if I think my device is compromised?
+
+Move funds to a new wallet from a trusted device as soon as possible.
+
+If you believe your secret key may have been exposed, assume the old wallet is no longer safe.
+
+## How should contributors use this FAQ?
+
+Use this document when reviewing UI copy or wallet behavior so the app stays clear about local storage, resets, and user responsibility. Do not add language that suggests the app is a custodian, insurer, or guaranteed backup service.
+
